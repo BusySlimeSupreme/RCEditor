@@ -239,6 +239,8 @@ body:not(.play) #gl .g.sel{outline:2px solid #4aa3ff;outline-offset:-2px}
 #rcout{position:fixed;left:8px;top:60px;z-index:20;max-width:min(92vw,520px);font:12px/1.35 monospace;color:#fff;pointer-events:none;display:none}
 .play #rcout{display:block}#rcout div{background:rgba(0,0,0,.5);padding:1px 6px;margin-top:2px;border-radius:3px;word-break:break-word}#rcout .bad{color:#ff8a8a}
 #menu,#ndlg,#npdlg{font:400 16px "Source Sans Pro","Source Sans 3","Segoe UI",Roboto,system-ui,sans-serif;color:#fff}
+#fpsb{position:fixed;right:10px;top:10px;z-index:90;display:none;background:rgba(37,37,40,.94);color:#fff;border:1px solid #111;border-radius:0;padding:6px 10px;font:700 14px system-ui,sans-serif;pointer-events:none}
+#fpsb.on{display:block}
 #menu{position:fixed;inset:0;z-index:60;background:#252528;display:none;flex-direction:column}
 #menu.on{display:flex}
 #menu input,#ndlg input{-webkit-user-select:text;user-select:text}
@@ -498,6 +500,7 @@ html.nr #c { visibility: hidden !important }
  <div id="msg"></div>
 </dialog>
 
+<div id="fpsb"></div>
 <div id="menu" class="on">
  <div id="mnh"><h1>Places</h1><button id="mnImp" class="pp">Import</button><button id="mnNew" class="pp big">+ New Place</button></div>
  <div id="mnl"></div>
@@ -4022,7 +4025,16 @@ renderMenu();
 addEventListener("keydown", e => {
   if (!e.repeat && (e.key === "]" || e.code === "BracketRight")) { const t = e.target; if (!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable))) { RMODE = (RMODE + 1) % 3; try { localStorage.setItem("rcRM", RMODE); } catch (_) {} } }
 });
-function frame(now){ scaleTick(now); if (RES_LOCK && playing) RES = resFor(true); try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; } }
+// \ shows / hides the FPS counter
+let fpsOn = false, fpsN = 0, fpsT = 0;
+addEventListener("keydown", e => {
+  if (e.repeat || !(e.key === "\\" || e.code === "Backslash")) return;
+  const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  e.preventDefault(); fpsOn = !fpsOn; $("fpsb").classList.toggle("on", fpsOn); fpsN = 0; fpsT = 0;
+});
+function frame(now){ scaleTick(now); if (RES_LOCK && playing) RES = resFor(true);
+  try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; }
+  if (fpsOn) { if (!fpsT) fpsT = now; fpsN++; if (now - fpsT >= 500) { const ms = (now - fpsT) / fpsN; $("fpsb").textContent = Math.round(1000 / ms) + " FPS  \u00b7  " + ms.toFixed(1) + " ms"; fpsN = 0; fpsT = now; } } }
 function frame0(now){
   const dt = Math.min((now - last)/1000, 0.05); last = now; if (!playing && (scIsOpen || menuOpen)) { requestAnimationFrame(frame); return; } if (LS.cycle > 0) cycleStep(dt); if (!playing) { editFrame(now, dt); requestAnimationFrame(frame); return; }
   if (dbgEl) { dbgF++; if (now - dbgT > 500) { dbgEl.textContent = "fps " + Math.round(dbgF * 1000 / (now - dbgT)) + "\n" + Cam.dbg() + "\ngoal " + camGoal.toFixed(1) + " dist " + camDist.toFixed(1) + "\nvp " + innerWidth + "x" + innerHeight + " dpr " + devicePixelRatio; dbgT = now; dbgF = 0; } }
