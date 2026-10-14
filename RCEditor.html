@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Editor</title>
+<title>Client Editor</title>
 <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.2/dist/iro.min.js"></script>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#fff;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;position:fixed;inset:0;width:100%;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
@@ -284,13 +284,6 @@ body.edit.curlive:has(#sced.on) #scCode{cursor:text!important}
 #ppr.held .pg{transform:scale(.92)}
 #ppr .po2{font-size:13px;font-weight:400;opacity:.65;line-height:1}
 #ppr .pa{line-height:1.15}
-#perf{position:fixed;right:10px;top:10px;z-index:90;width:200px;box-sizing:border-box;background:rgba(37,37,40,.94);color:#fff;border:1px solid #3a3a3e;border-radius:6px;padding:8px 12px 10px;font:400 13px "Source Sans Pro","Source Sans 3","Segoe UI",Roboto,system-ui,sans-serif;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
-#perf.on{display:block}
-#perf h4{margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55)}
-#perf div.r{display:flex;justify-content:space-between;gap:18px;line-height:1.55}
-#perf div.r span:first-child{color:rgba(255,255,255,.6)}
-#perf b{font-weight:700}
-#perf small{display:block;margin-top:4px;font-size:11px;color:rgba(255,255,255,.4)}
 html.nr, html.nr body { background: transparent !important }
 html.nr #c { visibility: hidden !important }
 </style>
@@ -481,7 +474,7 @@ html.nr #c { visibility: hidden !important }
     <div class="pr"><span>Fog start</span><input id="lfs" type="number" step="10" min="0" inputmode="decimal"></div>
     <div class="pr"><span>Fog end</span><input id="lfe" type="number" step="10" min="0" inputmode="decimal" title="0 = no fog"></div>
     <div class="sec">Rendering</div>
-    <div class="pr"><span>Renderer</span><span id="lapi" title="The 3D view is drawn natively by the app with OpenGL ES"></span></div>
+    <div class="pr"><span>Renderer</span><span id="lapi" title="The 3D view is drawn natively by the app with OpenGL"></span></div>
     <div class="pr"><span>Shadows</span><input id="lshd" type="checkbox"></div>
     <div class="pr"><span>Soft shadows</span><input id="lsoft" type="number" step="0.1" min="0" max="1" inputmode="decimal"></div>
     <div class="pr"><span>Shadow dist.</span><input id="lsdist" type="number" step="10" min="16" max="1000" inputmode="decimal" title="How far from the camera shadows reach (studs). Shorter = sharper shadows"></div>
@@ -510,7 +503,6 @@ html.nr #c { visibility: hidden !important }
  <div id="mnl"></div>
  <input id="mnFile" type="file" accept=".json,application/json" hidden>
 </div>
-<div id="perf"><h4>Performance</h4><div class="r"><span>FPS</span><b id="pfF">-</b></div><div class="r"><span>Frame</span><b id="pfT">-</b></div><div class="r"><span>CPU</span><b id="pfC">-</b></div><div class="r"><span>GPU</span><b id="pfG">-</b></div><div class="r"><span>Render scale</span><b id="pfR">-</b></div><div class="r"><span>Quality (])</span><b id="pfQ">-</b></div><div class="r"><span>Parts</span><b id="pfP">-</b></div><small id="pfN"></small></div>
 <dialog id="ndlg">
  <div id="ndT">Name your place</div>
  <input id="ndI" type="text" maxlength="60" autocomplete="off" spellcheck="false" placeholder="Place name">
@@ -2832,7 +2824,7 @@ for (const [k, lo, hi] of PXF) { const el = $("px_" + k); el.addEventListener("f
 $("px_tintCol").oninput = e => { const b = cur1(); if (b && b.kind === "post") { (b.fx = b.fx || {}).tintCol = e.target.value; saveB(); } };
 $("lan").oninput = e => { const b = cur1(), v = parseFloat(e.target.value); if (b && isFinite(v)) { b.langle = Math.max(5, Math.min(170, v)); saveB(); } };
 // Lighting service: time of day, sun + moon (with sizes), sky, fog, shadows
-const LS_DEF = { time: 14, cycle: 0, bright: 1, amb: 1, sunCol: "#ffffff", ambCol: "#ffffff", elev: 55, az: 36, sunSize: 8, moonSize: 6, moonBright: 0.3, moonCol: "#cfd9ff",
+const LS_DEF = { time: 14, cycle: 0, bright: 0.6, amb: 0.35, sunCol: "#ffffff", ambCol: "#ffffff", elev: 55, az: 36, sunSize: 8, moonSize: 6, moonBright: 0.3, moonCol: "#cfd9ff",
   stars: 0.7, clouds: 0.55, skyTop: "#2a5cbf", skyHor: "#cce0f2", nightAmb: 0.2, fogCol: "#c8d6e5", fogStart: 0, fogEnd: 0, shadows: true, soft: 0.2, shDist: 150, expo: 0,
   sbOn: false, sbF: "", sbB: "", sbL: "", sbR: "", sbT: "", sbD: "",
   blur: 0, contrast: 1, sat: 1, fxBri: 1, hue: 0, sepia: 0, gray: 0, vig: 0, tintCol: "#ff8800", tintA: 0,
@@ -2942,7 +2934,8 @@ Object.assign(NR, (() => {
     const sk = 0.04 + 0.96 * dayK, top = hexRGB(LS.skyTop).map(v => v * sk), hor = hexRGB(LS.skyHor).map(v => v * sk);
     const fc = hexRGB(LS.fogCol), fk = 0.05 + 0.95 * dayK, fe = LS.fogEnd > 0 ? Math.max(LS.fogEnd, LS.fogStart + 1) : 1e5;
     return [...vp, eye[0], eye[1], eye[2], LIGHT[0], LIGHT[1], LIGHT[2], ...col, ...amb, ...top, ...hor, sv[0], sv[1], sv[2],
-      fc[0] * fk, fc[1] * fk, fc[2] * fk, LS.fogStart, fe, Math.pow(2, LS.expo), LS.shadows ? 1 : 0, +LS.shDist || 150, LS.soft, (LS.sbOn && [LS.sbF, LS.sbB, LS.sbL, LS.sbR, LS.sbT, LS.sbD].some(Boolean)) ? 1 : 0];
+      fc[0] * fk, fc[1] * fk, fc[2] * fk, LS.fogStart, fe, Math.pow(2, LS.expo), LS.shadows ? 1 : 0, +LS.shDist || 150, LS.soft, (LS.sbOn && [LS.sbF, LS.sbB, LS.sbL, LS.sbR, LS.sbT, LS.sbD].some(Boolean)) ? 1 : 0,
+      mc[0], mc[1], mc[2], LS.moonSize, LS.sunSize, LS.stars * (1 - dayK), LS.clouds, (performance.now() / 1000) % 1000, dayK];
   }
   // ---- characters (step 6): you, the other players and the broken-apart pieces. draw() hands every R6 part to char() while the native renderer is on;
   // end() sends the list once per frame (separate from the map, so a moving player never re-sends the whole scene). Same part layout (33 floats) as the map.
@@ -3049,7 +3042,7 @@ function fillLighting(){
   const set = (id, v) => { if (document.activeElement !== $(id)) $(id).value = v; };
   for (const [id, key] of LF) set(id, key === "time" ? Math.round(LS.time * 100) / 100 : LS[key]);
   for (const [id, key] of LC) $(id).value = LS[key];
-  $("lapi").textContent = "OpenGL ES" + (NATIVE ? " " + (NATIVE.gles || "") + " \u00b7 APK, GPU " + NATIVE.gpu + (NATIVE.vulkan ? " (Vulkan " + NATIVE.vulkan + ")" : "") : ""); $("lshd").checked = !!LS.shadows; $("lsbOn").checked = !!LS.sbOn; for (const k in SB_CELL) $("sb_" + k).value = String(LS[k]).startsWith("data:") ? "(photo)" : LS[k]; syncTime();
+  $("lapi").textContent = "OpenGL"; $("lshd").checked = !!LS.shadows; $("lsbOn").checked = !!LS.sbOn; for (const k in SB_CELL) $("sb_" + k).value = String(LS[k]).startsWith("data:") ? "(photo)" : LS[k]; syncTime();
 }
 for (const [id, key, lo, hi] of LF) $(id).oninput = e => { const v = parseFloat(e.target.value); if (isFinite(v)) { LS[key] = Math.max(lo, Math.min(hi, v)); if (key === "time") syncTime(); LSsave(); } };
 $("ltmr").oninput = e => { LS.time = parseFloat(e.target.value) || 0; syncTime(); LSsave(); };
@@ -3886,7 +3879,7 @@ async function buildGLB(parts){
     }
     meshes.push({ name: part.name, primitives: prims }); nodes.push({ name: part.name, mesh: meshes.length - 1 });
   }
-  const js = { asset: { version: "2.0", generator: "RCEditor" }, scene: 0, scenes: [{ nodes: nodes.map((_, i) => i) }], nodes, meshes, materials: mats, accessors: accs, bufferViews: views, buffers: [{ byteLength: off }] };
+  const js = { asset: { version: "2.0", generator: "CEditor" }, scene: 0, scenes: [{ nodes: nodes.map((_, i) => i) }], nodes, meshes, materials: mats, accessors: accs, bufferViews: views, buffers: [{ byteLength: off }] };
   if (imgs.length) { js.images = imgs; js.textures = texs; }
   let jb = new TextEncoder().encode(JSON.stringify(js)); const jp = (4 - jb.length % 4) % 4; if (jp) { const t = new Uint8Array(jb.length + jp).fill(32); t.set(jb); jb = t; }
   const h1 = new DataView(new ArrayBuffer(20)); h1.setUint32(0, 0x46546C67, true); h1.setUint32(4, 2, true); h1.setUint32(8, 20 + jb.length + 8 + off, true); h1.setUint32(12, jb.length, true); h1.setUint32(16, 0x4E4F534A, true);
@@ -4025,32 +4018,11 @@ if (!localStorage.getItem(PLK) && hadLegacy) {   // maps made before the menu ex
 renderMenu();
 
 
-// ---- performance panel (toggle with the \ key): FPS, frame time and CPU = JS time to build the frame
-const PF = { on: false, init: false, cpu: 0, n: 0, t: 0, ft: 0, last: 0 };
-function pfInit(){
-  PF.init = true;
-  $("pfN").textContent = "GPU time is not measured here: the app draws the 3D view natively";
-}
-function pfToggle(){ PF.on = !PF.on; if (PF.on && !PF.init) pfInit(); $("perf").classList.toggle("on", PF.on); PF.n = 0; PF.cpu = PF.gpu = PF.ft = 0; PF.t = 0; }
+// ] switches the render quality (Smooth / Balanced / Sharp)
 addEventListener("keydown", e => {
-  if (!e.repeat && (e.key === "]" || e.code === "BracketRight")) { const t = e.target; if (!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable))) { RMODE = (RMODE + 1) % 3; try { localStorage.setItem("rcRM", RMODE); } catch (_) {} $("pfQ").textContent = RM_NAMES[RMODE]; clearTimeout(PF.hide); if (!PF.on) { pfToggle(); PF.hide = setTimeout(() => { if (PF.on) pfToggle(); }, 2500); } } return; }
-  if (e.repeat || !(e.key === "\\" || e.code === "Backslash")) return;
-  const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  e.preventDefault(); pfToggle();
+  if (!e.repeat && (e.key === "]" || e.code === "BracketRight")) { const t = e.target; if (!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable))) { RMODE = (RMODE + 1) % 3; try { localStorage.setItem("rcRM", RMODE); } catch (_) {} } }
 });
-function pfMs(v){ return v.toFixed(v < 10 ? 2 : 1) + " ms"; }
-function pfEnd(now, t0){
-  const t1 = performance.now(); let est = 0;
-  PF.cpu += t1 - t0; PF.n++; if (PF.ft === 0 && PF.last) PF.ft = 0; PF.ft += now - (PF.last || now); PF.last = now;
-  if (!PF.t) PF.t = now;
-  if (now - PF.t >= 500 && PF.n) {
-    const fr = PF.ft / PF.n;
-    $("pfF").textContent = fr > 0 ? Math.round(1000 / fr) : "-"; $("pfT").textContent = pfMs(fr); $("pfC").textContent = pfMs(PF.cpu / PF.n);
-    $("pfG").textContent = "-"; $("pfR").textContent = RES.toFixed(2) + "x"; $("pfQ").textContent = RM_NAMES[RMODE]; $("pfP").textContent = blocks.length;
-    PF.t = now; PF.n = 0; PF.cpu = 0; PF.ft = 0;
-  }
-}
-function frame(now){ scaleTick(now); if (RES_LOCK && playing) RES = resFor(true); const t0 = PF.on ? performance.now() : 0; try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; if (PF.on) pfEnd(now, t0); } }
+function frame(now){ scaleTick(now); if (RES_LOCK && playing) RES = resFor(true); try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; } }
 function frame0(now){
   const dt = Math.min((now - last)/1000, 0.05); last = now; if (!playing && (scIsOpen || menuOpen)) { requestAnimationFrame(frame); return; } if (LS.cycle > 0) cycleStep(dt); if (!playing) { editFrame(now, dt); requestAnimationFrame(frame); return; }
   if (dbgEl) { dbgF++; if (now - dbgT > 500) { dbgEl.textContent = "fps " + Math.round(dbgF * 1000 / (now - dbgT)) + "\n" + Cam.dbg() + "\ngoal " + camGoal.toFixed(1) + " dist " + camDist.toFixed(1) + "\nvp " + innerWidth + "x" + innerHeight + " dpr " + devicePixelRatio; dbgT = now; dbgF = 0; } }
@@ -4203,6 +4175,11 @@ function frame0(now){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+// the system file picker can make Android restart the page: remember the open place when a file picker opens, and reopen it on the next start
+document.addEventListener("click", e => { const t = e.target; if (t && t.type === "file" && curPlace) { try { localStorage.setItem("rcResume", curPlace.id); } catch (_) {} } }, true);
+const clearResume = () => setTimeout(() => { try { localStorage.removeItem("rcResume"); } catch (_) {} }, 2500);
+addEventListener("focus", clearResume); document.addEventListener("visibilitychange", () => { if (!document.hidden) clearResume(); });
+try { const rid = localStorage.getItem("rcResume"); if (rid) { localStorage.removeItem("rcResume"); openPlace(rid); } } catch (_) {}
 // tell the apk the editor is up (loading screen then says Done and fades)
 try { requestAnimationFrame(() => requestAnimationFrame(() => { try { window.RCBridge && RCBridge.ready(); } catch (_) {} })); } catch (_) {}
 </script>
