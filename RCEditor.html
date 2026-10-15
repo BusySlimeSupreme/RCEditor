@@ -9,7 +9,7 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#fff;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;position:fixed;inset:0;width:100%;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
 #hud{position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none}
-#cur{position:fixed;left:0;top:0;width:32px;height:32px;pointer-events:none;display:none;z-index:99;filter:drop-shadow(0 0 0.5px #000)}
+#cur{position:fixed;left:0;top:0;width:32px;height:32px;pointer-events:none;display:none;z-index:99;will-change:transform;contain:layout style;filter:drop-shadow(0 0 0.5px #000)}
 body.game.curlive,body.game.curlive *,body.edit.curlive,body.edit.curlive *{cursor:none!important}
 body.game.curlive #cur.show,body.edit.curlive #cur.show{display:block}
 body.edit.curlive:has(dialog[open]),body.edit.curlive:has(dialog[open]) *{cursor:auto!important}
@@ -279,6 +279,8 @@ body.edit.curlive:has(#sced.on) #scCode{cursor:text!important}
 #scLn{flex:none;margin:0;box-sizing:content-box;min-width:2.2em;padding:12px 10px 90px 12px;text-align:right;color:rgba(255,255,255,.35);background:#252528;border-right:1px solid #111;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;overflow:hidden;white-space:pre;-webkit-user-select:none;user-select:none}
 #scCode{flex:1;min-width:0;margin:0;padding:12px 12px 60px;border:0;border-radius:0;outline:0;resize:none;background:#1c1c20;color:#fff;caret-color:#fff;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre;overflow:auto;tab-size:2;touch-action:pan-x pan-y;-webkit-user-select:text;user-select:text}
 #props:not(.isprompt) .ppp,#props.isprompt .nl{display:none}
+#gh{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block}
+#props:not(.ishl) .hlp,#props.ishl .nl{display:none}
 #ppr{position:fixed;left:0;top:0;z-index:30;display:none;align-items:center;gap:10px;padding:7px 16px 7px 7px;border-radius:0;background:rgba(28,28,32,.88);color:#fff;font:600 18px "Source Sans Pro","Source Sans 3","Segoe UI",Roboto,system-ui,sans-serif;touch-action:none;cursor:pointer;white-space:nowrap;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #ppr *{border-radius:0!important;box-sizing:border-box}
 #ppr .pg{position:relative;width:46px;height:46px;flex:none;background:conic-gradient(#fff 0deg,rgba(255,255,255,.28) 0deg)}
@@ -293,6 +295,7 @@ html.nr #c { visibility: hidden !important }
 <body class="edit">
 <canvas id="c"></canvas>
 <canvas id="gz"></canvas>
+<canvas id="gh"></canvas>
 <div id="edui">
  <div id="tb">
  <div class="tg"><button id="bMenu" class="pp" title="Back to main menu"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg></button><button id="bPlay" class="pp" title="Play (P)"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span class="lbl">Play</span></button></div>
@@ -375,6 +378,13 @@ html.nr #c { visibility: hidden !important }
      <div class="pr guT"><span>Text colour</span><input id="guTc" type="color" value="#ffffff"></div>
      <div class="pr guI"><span>Image link</span><input id="guIm" type="text" placeholder="https://...png" autocomplete="off" spellcheck="false"></div>
      <div class="pr guI"><span>Photo</span><button id="guImPick" class="rb">Choose photo…</button><input id="guImFile" type="file" accept="image/*" hidden></div>
+     <div class="pr guV"><span>Video link</span><input id="guVd" type="text" placeholder="https://...mp4" autocomplete="off" spellcheck="false"></div>
+     <div class="pr guV"><span>Video file</span><button id="guVdPick" class="rb">Choose video…</button><input id="guVdFile" type="file" accept="video/*" hidden></div>
+     <div class="pr guV"><span>Playing</span><input id="guVp" type="checkbox" title="Starts playing when the game starts"></div>
+     <div class="pr guV"><span>Looped</span><input id="guVl" type="checkbox"></div>
+     <div class="pr guV"><span>Volume</span><input id="guVo" type="number" step="0.1" min="0" max="1" inputmode="decimal"></div>
+     <div class="pr guV"><span>Speed</span><input id="guVs" type="number" step="0.25" min="0.25" max="4" inputmode="decimal"></div>
+     <div class="pr guV"><span>Fit</span><select id="guVf"><option value="contain">Fit (keep ratio)</option><option value="fill">Stretch</option><option value="cover">Crop to fill</option></select></div>
      <div class="pr guG"><span>Background</span><input id="guBg" type="color" value="#2b2f38"></div>
      <div class="pr guG"><span>Bg transparency</span><input id="guBt" type="number" step="0.1" min="0" max="1" inputmode="decimal"></div>
      <div class="pr guG"><span>Position X %</span><input id="guX" type="number" step="1" inputmode="decimal"></div>
@@ -409,6 +419,16 @@ html.nr #c { visibility: hidden !important }
      <div class="pr"><span>Spatial</span><input id="s3d" type="checkbox" title="Gets quieter the further you are from it"></div>
      <div class="pr"><span>Range</span><input id="sR" type="number" step="5" min="1" inputmode="decimal"></div>
      <div class="pr"><span></span><button id="sPrev" class="rb">Preview</button></div>
+    </div>
+    <div class="hlp">
+     <div class="sec">Highlight</div>
+     <div class="pr"><span>Enabled</span><input id="hlEn" type="checkbox"></div>
+     <div class="pr"><span>FillColor</span><input id="hlF" type="color" value="#ff3b3b"></div>
+     <div class="pr"><span>FillTransp.</span><input id="hlFT" type="number" step="0.05" min="0" max="1" inputmode="decimal"></div>
+     <div class="pr"><span>OutlineColor</span><input id="hlO" type="color" value="#ffffff"></div>
+     <div class="pr"><span>OutlineTransp.</span><input id="hlOT" type="number" step="0.05" min="0" max="1" inputmode="decimal"></div>
+     <div class="pr"><span>DepthMode</span><select id="hlD"><option value="top">AlwaysOnTop</option><option value="occ">Occluded</option></select></div>
+     <div class="pr"><span>Thickness</span><input id="hlW" type="number" step="0.5" min="0.5" max="12" inputmode="decimal"></div>
     </div>
     <div class="ppp">
      <div class="sec">Proximity Prompt</div>
@@ -529,6 +549,11 @@ html.nr #c { visibility: hidden !important }
 </div>
 <div id="rcout"></div>
 <script type="module">
+// no popups: alert() is silent, confirm() says yes, prompt() returns its default
+window.alert = m => { try { console.info("[alert]", m); } catch (_) {} };
+window.confirm = () => true;
+window.prompt = (m, d) => (d == null ? "" : d);
+
 import * as RAPIER_NS from "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js";
 const RAPIER = RAPIER_NS.default || RAPIER_NS;
 await RAPIER.init();
@@ -850,7 +875,7 @@ const NA = (NATIVE && window.RCBridge && typeof RCBridge.aInit === "function") ?
 const NMEDIA = (NATIVE && window.RCBridge && typeof RCBridge.saveMedia === "function") ? {
   save(dataUrl){ try { const i = dataUrl.indexOf(","), u = RCBridge.saveMedia(dataUrl.slice(5, dataUrl.indexOf(";")), dataUrl.slice(i + 1)); return u || dataUrl; } catch (_) { return dataUrl; } }
 } : null;
-const IMG_MAX = NMEDIA ? (NATIVE.tier === "high" ? 2048 : 1024) : 512, AUDIO_MAX = NMEDIA ? 25e6 : 1.5e6;
+const IMG_MAX = NMEDIA ? (NATIVE.tier === "high" ? 2048 : 1024) : 512, AUDIO_MAX = NMEDIA ? 25e6 : 1.5e6, VIDEO_MAX = NMEDIA ? 60e6 : 2e6;
 const MEDIA_RE = /https:\/\/appassets\.androidplatform\.net\/media\/[0-9a-f]{40}\.[a-z0-9]{2,4}/g;
 // exports must work on other devices: put the app's media back inline as data urls
 async function inlineMedia(text){
@@ -861,7 +886,7 @@ async function inlineMedia(text){
 // imports: big embedded images / audio move into the app's media store
 function migrateMedia(text){
   if (!NMEDIA) return text;
-  return text.replace(/"data:((?:image|audio)\/[a-z0-9.+-]+);base64,([A-Za-z0-9+\/=]{60000,})"/g, (m, mime, b64) => JSON.stringify(NMEDIA.save("data:" + mime + ";base64," + b64)));
+  return text.replace(/"data:((?:image|audio|video)\/[a-z0-9.+-]+);base64,([A-Za-z0-9+\/=]{60000,})"/g, (m, mime, b64) => JSON.stringify(NMEDIA.save("data:" + mime + ";base64," + b64)));
 }
 function dataToBuf(url){
   return fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).catch(e => { console.error("asset failed:", url, e); throw e; }).then(b => new Promise((ok, no) => actx.decodeAudioData(b, ok, no)));
@@ -1091,7 +1116,14 @@ addEventListener("keydown", () => setDesktop(true), true);
 const cvs = document.getElementById("c");
 const NATIVE_CAP = !!(window.RCBridge && window.RCBridge.mouseCapture); let nativeCapOn = false;
 // apk: Kotlin sends the captured (relative) mouse movement + button state here
-window.rcMouse = (dx, dy) => { if (!rmbLook) return; moveT = performance.now(); pushX = dx; pushY = dy; if (playing) Cam.look(dx, dy, 0.004); else look(dx, dy); };
+let mpX = 0, mpY = 0;   // mouse travel not yet applied: events only add to it, the frame applies it (fractions kept, nothing dropped)
+window.rcMouse = (dx, dy) => { if (!rmbLook) return; moveT = performance.now(); pushX = dx; pushY = dy; mpX += dx; mpY += dy; };
+const NATIVE_POLL = !!(window.RCBridge && window.RCBridge.mouseTake);
+function drainMouse(){   // runs at the very start of every frame, so the camera always uses the newest mouse position
+  if (nativeCapOn && NATIVE_POLL) { try { const s = RCBridge.mouseTake(); if (s) { const i = s.indexOf(","), dx = +s.slice(0, i), dy = +s.slice(i + 1); if (dx || dy) { moveT = performance.now(); pushX = dx; pushY = dy; mpX += dx; mpY += dy; } } } catch (_) {} }
+  if (!rmbLook) { mpX = mpY = 0; return; }
+  if (mpX || mpY) { const dx = mpX, dy = mpY; mpX = mpY = 0; if (playing) Cam.look(dx, dy, 0.004); else look(dx, dy); }
+}
 window.rcMouseBtn = b => { if (rmbLook && !(b & 2)) stopLook(); };
 let rmbLook = false, mx = innerWidth / 2, my = innerHeight / 2, moveT = 0, pushX = 0, pushY = 0;
 function startLook(){
@@ -1120,10 +1152,7 @@ addEventListener("pointermove", e => {
   mx = e.clientX; my = e.clientY;
   if (!rmbLook) return;
   if (Math.abs(dx) > 300 || Math.abs(dy) > 300) return;                   // ignore browser delta spikes
-  if (Math.abs(dx) < 0.4) dx = 0;                                         // ignore sensor jitter
-  if (Math.abs(dy) < 0.4) dy = 0;
-  moveT = performance.now(); pushX = dx; pushY = dy;
-  if (playing) Cam.look(dx, dy, 0.004); else look(dx, dy);   // editor: free camera
+  moveT = performance.now(); pushX = dx; pushY = dy; mpX += dx; mpY += dy;   // applied once per frame in drainMouse()
 });
 const hudEl = document.getElementById("hud"), curEl = document.getElementById("cur");
 let curX = 0, curY = 0, curHand = false, curState = "arrow";
@@ -1152,6 +1181,11 @@ curEl.innerHTML = Object.keys(CURSORS).map(cursorSvg).join("");   // build the f
 addEventListener("pointermove", e => {
   if (e.pointerType !== "mouse") { curEl.classList.remove("show"); return; }
   curX = e.clientX; curY = e.clientY; curEl.classList.add("show"); document.body.classList.add("curlive"); { const h = CURSORS[curState]; if (h) curEl.style.transform = `translate(${curX - h.hot[0]}px,${curY - h.hot[1]}px)`; }
+}, true);
+if ("onpointerrawupdate" in window) addEventListener("pointerrawupdate", e => {   // un-batched mouse position: the cursor follows the real mouse sooner than pointermove (which waits for the frame)
+  if (e.pointerType !== "mouse") return;
+  const h = CURSORS[curState]; if (!h || !curEl.classList.contains("show")) return;
+  curX = e.clientX; curY = e.clientY; curEl.style.transform = `translate3d(${curX - h.hot[0]}px,${curY - h.hot[1]}px,0)`;
 }, true);
 document.documentElement.addEventListener("mouseleave", () => curEl.classList.remove("show"));
 document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && rmbLook) stopLook(); });   // lock lost (Esc, alt-tab): never stay stuck
@@ -1441,7 +1475,7 @@ function repairPars(){
   return fix;
 }
 function inStor(b){ for (let n = 0; b && n < 50; n++) { if (b.par === "storage") return true; if (!b.par || b.par === "workspace") return false; b = byId(b.par); } return false; }
-const NOGEO = b => b.kind === "folder" || b.kind === "decal" || b.kind === "texture" || b.kind === "script" || b.kind === "sscript" || b.kind === "remote" || b.kind === "post" || b.kind === "gui", isScr = b => !!b && (b.kind === "script" || b.kind === "sscript"), ensureId = b => b.id || (b.id = uid());
+const NOGEO = b => b.kind === "folder" || b.kind === "highlight" || b.kind === "decal" || b.kind === "texture" || b.kind === "script" || b.kind === "sscript" || b.kind === "remote" || b.kind === "post" || b.kind === "gui", isScr = b => !!b && (b.kind === "script" || b.kind === "sscript"), ensureId = b => b.id || (b.id = uid());
 const uid = () => "f" + Math.random().toString(36).slice(2, 8);
 function spawnAt(){ try { const ps = blocks.filter(b => b.special === "spawn" && inWorld(b) && !b.spawnOff), p = ps[Math.floor(Math.random() * ps.length)]; if (p) return [p.pos[0], p.pos[1] + p.size[1] / 2 + 5, p.pos[2]]; } catch (_) {} return [0, 6, 0]; }
 let svT = 0;
@@ -1449,19 +1483,20 @@ const flushSave = () => { if (svT) { clearTimeout(svT); svT = 0; savePlace(); } 
 const saveB = () => { try { updMass(); } catch (_) {} try { applyFX(); } catch (_) {} try { renderGui(); } catch (_) {} clearTimeout(svT); svT = setTimeout(() => { svT = 0; savePlace(); }, 400); };
 addEventListener("pagehide", flushSave); document.addEventListener("visibilitychange", () => { if (document.hidden) flushSave(); });
 // ---- GUI: ScreenGui / Frame / TextLabel / TextButton, drawn as a page overlay (position + size are % of the parent) ----
-const GUIN = { screen: "ScreenGui", frame: "Frame", label: "TextLabel", button: "TextButton", imagelabel: "ImageLabel", imagebutton: "ImageButton", surface: "SurfaceGui", billboard: "BillboardGui" };
+const GUIN = { screen: "ScreenGui", frame: "Frame", label: "TextLabel", button: "TextButton", imagelabel: "ImageLabel", imagebutton: "ImageButton", video: "VideoFrame", surface: "SurfaceGui", billboard: "BillboardGui" };
 const GUID = { screen: { gx: 0, gy: 0, gw: 100, gh: 100 }, frame: { gx: 30, gy: 30, gw: 40, gh: 40, gbg: "#2b2f38", gbt: 0 },
   label: { gx: 35, gy: 10, gw: 30, gh: 10, gbg: "#2b2f38", gbt: 1, gtx: "Label", gts: 24, gtc: "#ffffff" },
   button: { gx: 35, gy: 45, gw: 30, gh: 10, gbg: "#4a90d9", gbt: 0, gtx: "Button", gts: 24, gtc: "#ffffff" },
   imagelabel: { gx: 38, gy: 30, gw: 24, gh: 24, gbg: "#ffffff", gbt: 1, gimg: "" },
   imagebutton: { gx: 38, gy: 30, gw: 24, gh: 24, gbg: "#ffffff", gbt: 1, gimg: "" },
+  video: { gx: 30, gy: 25, gw: 40, gh: 40, gbg: "#000000", gbt: 0, gvid: "", gplaying: true, gloop: false, gvol: 0.5, gspd: 1, gfit: "contain" },
   surface: { gface: 2, gpp: 50 }, billboard: { gbw: 6, gbh: 2, gpp: 50 } };
 const guiNew = gt => Object.assign({ kind: "gui", gt, id: "f" + Math.random().toString(36).slice(2, 8), name: GUIN[gt], pos: gt === "billboard" ? [0, 3, 0] : [0, 0, 0], size: [1, 1, 1], color: "#888888" }, GUID[gt]);
-const isImg = b => !!b && b.kind === "gui" && (b.gt === "imagelabel" || b.gt === "imagebutton"), isBtn = b => !!b && b.kind === "gui" && (b.gt === "button" || b.gt === "imagebutton");
+const isImg = b => !!b && b.kind === "gui" && (b.gt === "imagelabel" || b.gt === "imagebutton"), isBtn = b => !!b && b.kind === "gui" && (b.gt === "button" || b.gt === "imagebutton"), isVid = b => !!b && b.kind === "gui" && b.gt === "video";
 const is3D = b => !!b && b.kind === "gui" && (b.gt === "surface" || b.gt === "billboard");   // SurfaceGui / BillboardGui live in the 3D scene, not on the page
 const isGuiC = b => !!b && b.kind === "gui" && (b.gt === "screen" || b.gt === "frame" || b.gt === "surface" || b.gt === "billboard");
 const guiL = document.createElement("div"); guiL.id = "gl"; document.body.appendChild(guiL);
-let guiSig = "", guiDirty = false, guiDrag = null; const guiEls = new Map();
+let guiSig = "", guiDirty = false, guiDrag = null; const guiEls = new Map(), guiVids = new Map();   // guiVids: one <video> per VideoFrame, kept across redraws so playback does not restart
 function guiStart(e, b, dir){   // drag a GUI object in the viewport: body = move, handles = resize (all in % of the parent)
   if (playing || e.button > 0) return; e.stopPropagation(); e.preventDefault();
   const i = blocks.indexOf(b); if (i < 0) return;
@@ -1506,6 +1541,25 @@ function renderGui(){
     if (!sc) { const c = /^#[0-9a-f]{6}$/i.test(b.gbg) ? b.gbg : "#2b2f38", a = 1 - Math.max(0, Math.min(1, +b.gbt || 0)); st.background = `rgba(${parseInt(c.slice(1, 3), 16)},${parseInt(c.slice(3, 5), 16)},${parseInt(c.slice(5, 7), 16)},${a})`; }
     if (b.gt === "label" || b.gt === "button") { st.color = /^#[0-9a-f]{6}$/i.test(b.gtc) ? b.gtc : "#fff"; st.fontSize = Math.max(6, Math.min(200, +b.gts || 24)) + "px"; el.textContent = b.gtx || ""; }
     if (isImg(b) && b.gimg) { st.backgroundImage = "url(" + JSON.stringify(b.gimg) + ")"; st.backgroundSize = "100% 100%"; st.backgroundRepeat = "no-repeat"; st.backgroundPosition = "center"; }
+    if (isVid(b)) {   // VideoFrame: the same <video> is reused on every redraw (video time, sound and loop survive a script changing another property)
+      let v = guiVids.get(b.id);
+      if (!v) {
+        v = document.createElement("video"); v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("webkit-playsinline", ""); v.preload = "auto"; v.disablePictureInPicture = true;
+        v.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none";
+        v.addEventListener("ended", () => { if (!playing) return; const r = insts.get(v._b); if (r && r.sigs && r.sigs.Ended) r.sigs.Ended.fire(); });
+        v.addEventListener("loadedmetadata", () => { if (!v._sess && v.currentTime < 0.05) { try { v.currentTime = 0.05; } catch (_) {} } });   // editor: show a frame instead of black
+        guiVids.set(b.id, v);
+      }
+      v._b = b;
+      const src = typeof b.gvid === "string" ? b.gvid : "";
+      if (v._src !== src) { v._src = src; if (src) v.src = src; else v.removeAttribute("src"); try { v.load(); } catch (_) {} }
+      v.loop = !!b.gloop; v.volume = Math.max(0, Math.min(1, b.gvol != null && isFinite(+b.gvol) ? +b.gvol : 0.5)); v.playbackRate = Math.max(0.25, Math.min(4, +b.gspd || 1));
+      v.style.objectFit = b.gfit === "fill" || b.gfit === "cover" ? b.gfit : "contain";
+      if (playing) { if (!v._sess) { v._sess = true; try { v.currentTime = 0; } catch (_) {} } } else v._sess = false;
+      if (playing && src && b.gvis !== false && b.gplaying !== false) { v.muted = false; const pp = v.play(); if (pp && pp.catch) pp.catch(() => { v.muted = true; v.play().catch(() => {}); }); }
+      else v.pause();
+      el.appendChild(v);
+    }
     if (isBtn(b)) {
       el.addEventListener("click", e => { e.stopPropagation(); if (!playing) return; const r = insts.get(b); if (r && r.sigs && r.sigs.MouseButton1Click) r.sigs.MouseButton1Click.fire(); });
     }
@@ -1515,6 +1569,7 @@ function renderGui(){
     for (const k of kids.get(b) || []) build(k, el, depth + 1);
   };
   for (const b of roots) build(b, guiL, 0);
+  for (const [id, v] of guiVids) if (!gs.some(x => x.id === id)) { v.pause(); v.removeAttribute("src"); guiVids.delete(id); }
   guiSig = sig;
 }
 function cleanB(b){ const o = Object.assign({}, b); if (!o.rot || !(o.rot[0] || o.rot[1] || o.rot[2])) delete o.rot; return o; }
@@ -1636,19 +1691,283 @@ const MODELS = {};              // model id -> packed model, saved with the plac
 const MD_CACHE = new Map();     // model id -> unpacked arrays
 const MAX_TRIS = 300000;
 const baseName = p => String(p || "").replace(/\\/g, "/").split("/").pop().toLowerCase();
+// ---- finding a file a model points at: any folder layout, slashes, URL escapes, upper/lower case, other picture extension ----
+const IMG_RE = /\.(png|jpe?g|webp|gif|bmp|tga|avif|dds|psd|tiff?|ktx2)$/i;
+const MISSING = new Set(), LONE = {};   // names a model asked for that were not among the picked files / the one-picture shortcut already used
+function findFile(files, ref, kind){   // kind: "img" | /regex of the extension/ | undefined
+  if (!ref) return null; const all = files._all || [...files.values()];
+  let r = String(ref).trim().replace(/^["']|["']$/g, "").replace(/^file:\/*/i, "/").split(/[?#]/)[0].replace(/\\/g, "/");
+  try { r = decodeURIComponent(r); } catch (_) {}
+  const rl = r.toLowerCase(), bn = rl.split("/").pop(), stem = bn.replace(/\.[a-z0-9]+$/, ""), loose = x => x.replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]/g, "");
+  const nmOf = e => String(e.name || "").replace(/\\/g, "/").toLowerCase(), bOf = e => nmOf(e).split("/").pop();
+  const good = e => kind === "img" ? IMG_RE.test(bOf(e)) : kind instanceof RegExp ? kind.test(bOf(e)) : true;
+  const pick = list => { if (list.length < 2) return list[0] || null; let best = list[0], bs = -1;   // same name in several folders: the longest matching path tail wins
+    for (const e of list) { const a = nmOf(e).split("/").reverse(), b = rl.split("/").reverse(); let k = 0; while (k < a.length && k < b.length && a[k] === b[k]) k++; if (k > bs) { bs = k; best = e; } } return best; };
+  let c = all.filter(e => bOf(e) === bn); if (c.length) return pick(c);
+  c = all.filter(e => good(e) && bOf(e).replace(/\.[a-z0-9]+$/, "") === stem); if (c.length) return pick(c);       // same name, different picture format
+  c = all.filter(e => good(e) && loose(bOf(e)) === loose(bn) && loose(bn)); if (c.length) return pick(c);        // spaces / _ / - differences
+  c = all.filter(e => good(e) && loose(bn) && (loose(bOf(e)).includes(loose(bn)) || loose(bn).includes(loose(bOf(e))))); if (c.length === 1) return c[0];
+  if (kind) { c = all.filter(good); const kk = kind === "img" ? "img" : String(kind); if (c.length === 1 && (LONE[kk] == null || LONE[kk] === bn)) { LONE[kk] = bn; return c[0]; } }   // the only picture / the only file of that kind (for one missing name)
+  MISSING.add(String(ref).trim().replace(/[?#].*$/, "").split(/[\\/]/).pop() || String(ref));
+  return null;
+}
+function decodeTGA(buf){   // .tga (indexed, grey, true colour; raw or run-length) -> canvas
+  const u = new Uint8Array(buf), idl = u[0], cmT = u[1], ty = u[2], cmS = u[3] | u[4] << 8, cmL = u[5] | u[6] << 8, cmD = u[7], w = u[12] | u[13] << 8, h = u[14] | u[15] << 8, bpp = u[16], ds = u[17];
+  if (!w || !h || ![1, 2, 3, 9, 10, 11].includes(ty)) throw new Error("this .tga type isn't supported");
+  let p = 18 + idl; const rgb = (o, nb) => nb === 2 ? (() => { const v = u[o] | u[o+1] << 8; return [(v >> 10 & 31) * 255 / 31, (v >> 5 & 31) * 255 / 31, (v & 31) * 255 / 31, 255]; })() : nb === 3 ? [u[o+2], u[o+1], u[o], 255] : [u[o+2], u[o+1], u[o], u[o+3]];
+  const pal = []; if (cmT === 1) { const nb = Math.ceil(cmD / 8); for (let i = 0; i < cmL; i++) pal[cmS + i] = rgb(p + i * nb, nb); p += cmL * Math.ceil(cmD / 8); }
+  const nb = Math.max(1, bpp >> 3), rle = ty >= 9, kind = ty === 1 || ty === 9 ? "i" : ty === 3 || ty === 11 ? "g" : "c", out = new Uint8ClampedArray(w * h * 4);
+  const px = o => kind === "i" ? (pal[nb === 1 ? u[o] : u[o] | u[o+1] << 8] || [0, 0, 0, 255]) : kind === "g" ? [u[o], u[o], u[o], nb > 1 ? u[o+1] : 255] : rgb(o, nb);
+  let i = 0; const put = c => { if (i < w * h) { const y = i / w | 0, x = i % w, row = ds & 32 ? y : h - 1 - y, q = (row * w + x) * 4; out[q] = c[0]; out[q+1] = c[1]; out[q+2] = c[2]; out[q+3] = c[3]; } i++; };
+  if (!rle) while (i < w * h && p + nb <= u.length) { put(px(p)); p += nb; }
+  else while (i < w * h && p < u.length) { const hd = u[p++], n = (hd & 127) + 1; if (hd & 128) { const c = px(p); p += nb; for (let k = 0; k < n; k++) put(c); } else for (let k = 0; k < n; k++) { put(px(p)); p += nb; } }
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").putImageData(new ImageData(out, w, h), 0, 0); return cv;
+}
 const meshOf = b => b.mesh || (b.model ? (modelData(b.model) || {}).mesh6 || null : null);   // the unit-size x y z nx ny nz triangle list of a part (CSG result or imported model)
 const bufB64 = ab => { const u = new Uint8Array(ab); let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+
+// ---- more picture formats the browser can't read: DDS, PSD, TIFF (TGA is above). Each returns a canvas. ----
+const _ab = b => b instanceof ArrayBuffer ? b : b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+function _cvOf(out, w, h){ const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").putImageData(new ImageData(out, w, h), 0, 0); return cv; }
+async function _inflate(u){ return new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer()); }
+const _h2f = h => { const s = h & 0x8000 ? -1 : 1, e = (h >> 10) & 31, f = h & 1023; return e === 0 ? s * 5.960464477539063e-8 * f : e === 31 ? (f ? NaN : s * Infinity) : s * Math.pow(2, e - 15) * (1 + f / 1024); };
+const _f2b = v => !isFinite(v) ? 0 : Math.round(255 * _lin2s(Math.min(1, Math.max(0, v))));   // linear float -> 8 bit colour
+function _packBits(u, p, end, n){ const out = new Uint8Array(n); let o = 0; while (o < n && p < end) { const c = u[p++]; if (c < 128) { for (let i = 0; i <= c && o < n; i++) out[o++] = u[p++]; } else if (c > 128) { const v = u[p++]; for (let i = 0; i < 257 - c && o < n; i++) out[o++] = v; } } return out; }
+function _lzw(src, n){   // TIFF flavour of LZW (MSB first, 9..12 bit codes, "early change")
+  const out = new Uint8Array(n), prefix = new Int16Array(4096), suffix = new Uint8Array(4096), lens = new Uint16Array(4096), fb = new Uint8Array(4096);
+  for (let i = 0; i < 256; i++) { suffix[i] = i; lens[i] = 1; fb[i] = i; prefix[i] = -1; }
+  let op = 0, sp = 0, bits = 0, nb = 0, next = 258, width = 9, prev = -1;
+  const write = code => { const len = lens[code]; for (let c = code, i = op + len - 1; i >= op; i--) { if (i < n) out[i] = suffix[c]; c = prefix[c]; } op += len; };
+  while (op < n) {
+    while (nb < width) { if (sp >= src.length) return out; bits = ((bits << 8) | src[sp++]) & 0xFFFFFF; nb += 8; }
+    const code = (bits >> (nb - width)) & ((1 << width) - 1); nb -= width; bits &= (1 << nb) - 1;
+    if (code === 257) break;
+    if (code === 256) { next = 258; width = 9; prev = -1; continue; }
+    if (prev === -1) { write(code); prev = code; continue; }
+    if (next < 4096) { prefix[next] = prev; suffix[next] = code < next ? fb[code] : fb[prev]; lens[next] = lens[prev] + 1; fb[next] = fb[prev]; next++; }
+    write(code); prev = code;
+    if (next + 1 >= (1 << width) && width < 12) width++;
+  }
+  return out;
+}
+// BC6H / BC7 are far too big to decode by hand: the phone's graphics chip does it (WebGL BPTC), then the picture is read back
+function _bptcGPU(w, h, data, fmt){
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const gl = cv.getContext("webgl", { preserveDrawingBuffer: true, premultipliedAlpha: false, antialias: false }), ext = gl && gl.getExtension("EXT_texture_compression_bptc");
+  if (!ext) throw new Error("this phone's graphics chip can't read BC6H/BC7 pictures: save the .dds as DXT5 or use a .png");
+  const W4 = (w + 3) & ~3, H4 = (h + 3) & ~3, sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; }, pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 uv; void main(){ uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }"));
+  gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, "precision highp float; uniform sampler2D t; uniform vec2 k; uniform float hdr; varying vec2 uv; void main(){ vec4 c = texture2D(t, uv * k); if (hdr > .5) c = vec4(pow(clamp(c.rgb, 0., 1.), vec3(1. / 2.2)), 1.); gl_FragColor = c; }"));
+  gl.linkProgram(pr); gl.useProgram(pr);
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.compressedTexImage2D(gl.TEXTURE_2D, 0, fmt === "bc7" ? ext.COMPRESSED_RGBA_BPTC_UNORM_EXT : ext.COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT, W4, H4, 0, data);
+  if (gl.getError() !== gl.NO_ERROR) throw new Error("the graphics chip refused this BC6H/BC7 picture");
+  const bf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  gl.uniform1i(gl.getUniformLocation(pr, "t"), 0); gl.uniform2f(gl.getUniformLocation(pr, "k"), w / W4, h / H4); gl.uniform1f(gl.getUniformLocation(pr, "hdr"), fmt === "bc6" ? 1 : 0);
+  gl.viewport(0, 0, w, h); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  const c2 = document.createElement("canvas"); c2.width = w; c2.height = h; c2.getContext("2d").drawImage(cv, 0, 0);
+  const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext(); return c2;
+}
+function decodeDDS(buf){
+  const u = new Uint8Array(buf), dv = new DataView(buf); if (buf.byteLength < 128 || dv.getUint32(0, true) !== 0x20534444) throw new Error("not a DDS file");
+  const h = dv.getUint32(12, true), w = dv.getUint32(16, true), pf = dv.getUint32(80, true), cc = dv.getUint32(84, true), bits = dv.getUint32(88, true), M = [92, 96, 100, 104].map(o => dv.getUint32(o, true));
+  const f4 = s => (s.charCodeAt(0) | s.charCodeAt(1) << 8 | s.charCodeAt(2) << 16 | s.charCodeAt(3) << 24) >>> 0;
+  let off = 128, fmt;
+  if (pf & 4) {
+    if (cc === f4("DX10")) { off = 148; fmt = { 71: "bc1", 72: "bc1", 74: "bc2", 75: "bc2", 77: "bc3", 78: "bc3", 80: "bc4", 81: "bc4", 83: "bc5", 84: "bc5", 28: "rgba", 29: "rgba", 87: "bgra", 91: "bgra", 88: "bgrx", 93: "bgrx", 10: "h16", 11: "u16", 61: "r8", 49: "rg8", 85: "565", 86: "5551", 95: "bc6", 96: "bc6", 98: "bc7", 99: "bc7" }[dv.getUint32(128, true)]; }
+    else fmt = { [f4("DXT1")]: "bc1", [f4("DXT2")]: "bc2", [f4("DXT3")]: "bc2", [f4("DXT4")]: "bc3", [f4("DXT5")]: "bc3", [f4("ATI1")]: "bc4", [f4("BC4U")]: "bc4", [f4("ATI2")]: "bc5", [f4("BC5U")]: "bc5", 36: "u16", 113: "h16" }[cc];
+    if (!fmt) throw new Error("this .dds format isn't supported");
+  } else fmt = "mask";
+  if (!w || !h || w * h > 1 << 26) throw new Error("bad .dds size");
+  if (fmt === "bc6" || fmt === "bc7") return _bptcGPU(w, h, u.subarray(off, off + Math.ceil(w / 4) * Math.ceil(h / 4) * 16), fmt);
+  const out = new Uint8ClampedArray(w * h * 4), put = (x, y, r, g, b, a) => { if (x < w && y < h) { const q = (y * w + x) * 4; out[q] = r; out[q+1] = g; out[q+2] = b; out[q+3] = a; } };
+  const px = { rgba: [4, o => [u[o], u[o+1], u[o+2], u[o+3]]], bgra: [4, o => [u[o+2], u[o+1], u[o], u[o+3]]], bgrx: [4, o => [u[o+2], u[o+1], u[o], 255]], r8: [1, o => [u[o], u[o], u[o], 255]], rg8: [2, o => [u[o], u[o+1], 0, 255]],
+    "565": [2, o => { const v = u[o] | u[o+1] << 8; return [(v >> 11 & 31) * 255 / 31, (v >> 5 & 63) * 255 / 63, (v & 31) * 255 / 31, 255]; }], "5551": [2, o => { const v = u[o] | u[o+1] << 8; return [(v >> 10 & 31) * 255 / 31, (v >> 5 & 31) * 255 / 31, (v & 31) * 255 / 31, v & 0x8000 ? 255 : 0]; }],
+    u16: [8, o => [u[o+1], u[o+3], u[o+5], u[o+7]]], h16: [8, o => [_f2b(_h2f(u[o] | u[o+1] << 8)), _f2b(_h2f(u[o+2] | u[o+3] << 8)), _f2b(_h2f(u[o+4] | u[o+5] << 8)), Math.round(255 * Math.min(1, Math.max(0, _h2f(u[o+6] | u[o+7] << 8))))]] }[fmt];
+  if (px) { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = px[1](off + (y * w + x) * px[0]); put(x, y, c[0], c[1], c[2], c[3]); } }
+  else if (fmt === "mask") {
+    const nb = Math.max(1, bits >> 3), ch = m => { if (!m) return null; let s = 0; while (!((m >>> s) & 1)) s++; return { m, s, mx: m >>> s }; }, C = M.map(ch), get = (v, c) => c ? ((v & c.m) >>> c.s) * 255 / c.mx : 255;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const o = off + (y * w + x) * nb; let v = 0; for (let k = 0; k < nb; k++) v |= u[o+k] << (8 * k);
+      if (pf & 0x20000) { const l = get(v, C[0]); put(x, y, l, l, l, C[3] ? get(v, C[3]) : 255); } else put(x, y, get(v, C[0]), get(v, C[1]), get(v, C[2]), (pf & 1) && C[3] ? get(v, C[3]) : 255); }
+  } else {
+    const bs = fmt === "bc1" || fmt === "bc4" ? 8 : 16, bw = Math.ceil(w / 4), bh = Math.ceil(h / 4);
+    const ablk = o => { const a = [u[o], u[o+1]], t = []; if (a[0] > a[1]) for (let i = 0; i < 8; i++) t[i] = i === 0 ? a[0] : i === 1 ? a[1] : (a[0] * (8 - i) + a[1] * (i - 1)) / 7; else for (let i = 0; i < 8; i++) t[i] = i === 0 ? a[0] : i === 1 ? a[1] : i < 6 ? (a[0] * (6 - i) + a[1] * (i - 1)) / 5 : i === 6 ? 0 : 255;
+      const lo = u[o+2] | u[o+3] << 8 | u[o+4] << 16, hi = u[o+5] | u[o+6] << 8 | u[o+7] << 16, r = []; for (let p = 0; p < 16; p++) r[p] = t[p < 8 ? (lo >> (p * 3)) & 7 : (hi >> ((p - 8) * 3)) & 7]; return r; };
+    const c565 = v => [(v >> 11 & 31) * 255 / 31, (v >> 5 & 63) * 255 / 63, (v & 31) * 255 / 31];
+    for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+      const o = off + (by * bw + bx) * bs; if (o + bs > buf.byteLength) break;
+      if (fmt === "bc4") { const a = ablk(o); for (let p = 0; p < 16; p++) put(bx * 4 + (p & 3), by * 4 + (p >> 2), a[p], a[p], a[p], 255); continue; }
+      if (fmt === "bc5") { const r = ablk(o), g = ablk(o + 8); for (let p = 0; p < 16; p++) { const nx = r[p] / 127.5 - 1, ny = g[p] / 127.5 - 1, nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)); put(bx * 4 + (p & 3), by * 4 + (p >> 2), r[p], g[p], (nz + 1) * 127.5, 255); } continue; }
+      const co = fmt === "bc1" ? o : o + 8, c0 = u[co] | u[co+1] << 8, c1 = u[co+2] | u[co+3] << 8, A = c565(c0), B = c565(c1), four = fmt !== "bc1" || c0 > c1;
+      const pal = [A, B, four ? A.map((v, i) => (2 * v + B[i]) / 3) : A.map((v, i) => (v + B[i]) / 2), four ? A.map((v, i) => (v + 2 * B[i]) / 3) : [0, 0, 0]], bitsv = (u[co+4] | u[co+5] << 8 | u[co+6] << 16 | u[co+7] << 24) >>> 0, al = fmt === "bc3" ? ablk(o) : null;
+      for (let p = 0; p < 16; p++) { const ix = (bitsv >>> (p * 2)) & 3, c = pal[ix]; let a = 255; if (fmt === "bc1") a = !four && ix === 3 ? 0 : 255; else if (fmt === "bc2") { const nib = u[o + (p >> 1)]; a = (p & 1 ? nib >> 4 : nib & 15) * 17; } else a = al[p]; put(bx * 4 + (p & 3), by * 4 + (p >> 2), c[0], c[1], c[2], a); }
+    }
+  }
+  return _cvOf(out, w, h);
+}
+async function _psdLayers(dv, u, lm, psb, W, H, depth){   // paint the visible layers (normal blend) on top of each other: used when the saved flat picture is empty
+  if (depth !== 8 && depth !== 16) return null; const bps = depth >> 3; let p = lm;
+  const liLen = psb ? Number(dv.getBigUint64(p)) : dv.getUint32(p); p += psb ? 8 : 4; if (!liLen) return null;
+  const cnt = Math.abs(dv.getInt16(p)); p += 2; const L = [];
+  for (let i = 0; i < cnt; i++) {
+    const top = dv.getInt32(p), left = dv.getInt32(p + 4), bot = dv.getInt32(p + 8), right = dv.getInt32(p + 12), nc = dv.getUint16(p + 16); p += 18; const chs = [];
+    for (let k = 0; k < nc; k++) { const id = dv.getInt16(p), len = psb ? Number(dv.getBigUint64(p + 2)) : dv.getUint32(p + 2); p += psb ? 10 : 6; chs.push({ id, len }); }
+    const op = u[p + 8], fl = u[p + 10]; p += 12; p += 4 + dv.getUint32(p); L.push({ top, left, bot, right, chs, op, hidden: !!(fl & 2) });
+  }
+  const out = new Float32Array(W * H * 4); let any = false;
+  for (const l of L) {
+    const lw = l.right - l.left, lh = l.bot - l.top, pl = {};
+    for (const c of l.chs) { const st = p; if (c.len >= 2 && lw > 0 && lh > 0) { const cm = dv.getUint16(p), rowB = lw * bps; let a = null;
+        if (cm === 0) a = u.subarray(p + 2, p + 2 + lh * rowB);
+        else if (cm === 1) { const cl = psb ? 4 : 2; let q = p + 2 + lh * cl; a = new Uint8Array(lh * rowB); for (let y = 0; y < lh; y++) { const len = psb ? dv.getUint32(p + 2 + y * 4) : dv.getUint16(p + 2 + y * 2); a.set(_packBits(u, q, q + len, rowB), y * rowB); q += len; } }
+        else if (cm === 2) a = (await _inflate(u.subarray(p + 2, st + c.len))).subarray(0, lh * rowB);
+        pl[c.id] = a; } p = st + c.len; }
+    if (l.hidden || lw <= 0 || lh <= 0 || !pl[0]) continue;
+    for (let y = 0; y < lh; y++) { const Y = y + l.top; if (Y < 0 || Y >= H) continue; for (let x = 0; x < lw; x++) { const X = x + l.left; if (X < 0 || X >= W) continue; const i = (y * lw + x) * bps, o = (Y * W + X) * 4;
+      const r = pl[0][i], g = (pl[1] || pl[0])[i], b = (pl[2] || pl[0])[i], a = (pl[-1] ? pl[-1][i] / 255 : 1) * l.op / 255, dA = out[o + 3], oA = a + dA * (1 - a); if (oA <= 0) continue;
+      out[o] = (r * a + out[o] * dA * (1 - a)) / oA; out[o + 1] = (g * a + out[o + 1] * dA * (1 - a)) / oA; out[o + 2] = (b * a + out[o + 2] * dA * (1 - a)) / oA; out[o + 3] = oA; if (a > 0) any = true; } }
+  }
+  if (!any) return null; const px = new Uint8ClampedArray(W * H * 4); for (let i = 0; i < W * H; i++) { px[i*4] = out[i*4]; px[i*4+1] = out[i*4+1]; px[i*4+2] = out[i*4+2]; px[i*4+3] = out[i*4+3] * 255; } return px;
+}
+async function decodePSD(buf){   // the flat picture saved inside the .psd / .psb; when that is empty (saved without "maximize compatibility") the layers are painted instead
+  const u = new Uint8Array(buf), dv = new DataView(buf); if (dv.getUint32(0) !== 0x38425053) throw new Error("not a PSD file");
+  const ver = dv.getUint16(4), psb = ver === 2; if (ver !== 1 && ver !== 2) throw new Error("unknown .psd version");
+  const ch = dv.getUint16(12), h = dv.getUint32(14), w = dv.getUint32(18), depth = dv.getUint16(22), mode = dv.getUint16(24);
+  if (![1, 8, 16, 32].includes(depth)) throw new Error("this .psd bit depth isn't supported");
+  if (![0, 1, 2, 3, 4, 8].includes(mode)) throw new Error("this .psd colour mode isn't supported (use RGB, grey, CMYK or indexed)");
+  let p = 26; const cm = p + 4; p += 4 + dv.getUint32(p); p += 4 + dv.getUint32(p);
+  const lmLen = psb ? Number(dv.getBigUint64(p)) : dv.getUint32(p), lmData = p + (psb ? 8 : 4); p = lmData + lmLen;
+  const comp = dv.getUint16(p); p += 2; const bps = depth === 1 ? 1 : depth >> 3, rowB = depth === 1 ? Math.ceil(w / 8) : w * bps, planes = [];
+  if (comp === 0) for (let c = 0; c < ch; c++) planes.push(u.subarray(p + c * h * rowB, p + (c + 1) * h * rowB));
+  else if (comp === 1) { const cl = psb ? 4 : 2, cnt = []; for (let i = 0; i < ch * h; i++) cnt.push(psb ? dv.getUint32(p + i * 4) : dv.getUint16(p + i * 2)); let q = p + ch * h * cl, i = 0; for (let c = 0; c < ch; c++) { const pl = new Uint8Array(h * rowB); for (let y = 0; y < h; y++) { const len = cnt[i++]; pl.set(_packBits(u, q, q + len, rowB), y * rowB); q += len; } planes.push(pl); } }
+  else if (comp === 2) { const all = await _inflate(u.subarray(p)); for (let c = 0; c < ch; c++) planes.push(all.subarray(c * h * rowB, (c + 1) * h * rowB)); }
+  else throw new Error("this .psd compression isn't supported");
+  const dvs = depth === 32 ? planes.map(a => new DataView(a.buffer, a.byteOffset, a.byteLength)) : null;
+  const S = (c, i) => depth === 8 ? planes[c][i] : depth === 16 ? planes[c][i * 2] : depth === 32 ? _f2b(dvs[c].getFloat32(i * 4)) : 0, out = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) { const o = i * 4; let r, g, b, a = 255;
+    if (mode === 0) { const bit = (planes[0][(i / w | 0) * rowB + ((i % w) >> 3)] >> (7 - (i % w & 7))) & 1; r = g = b = bit ? 0 : 255; }
+    else if (mode === 3 && ch >= 3) { r = S(0, i); g = S(1, i); b = S(2, i); if (ch > 3) a = S(3, i); }
+    else if (mode === 2) { const k = S(0, i); r = u[cm + k]; g = u[cm + 256 + k]; b = u[cm + 512 + k]; }
+    else if (mode === 4 && ch >= 4) { const k = S(3, i); r = S(0, i) * k / 255; g = S(1, i) * k / 255; b = S(2, i) * k / 255; }
+    else { r = g = b = S(0, i); if (ch > 1) a = S(1, i); }
+    out[o] = r; out[o+1] = g; out[o+2] = b; out[o+3] = a; }
+  let blank = true; for (let t = 0; t < 97 && blank; t++) { const q = ((t * 7919) % (w * h)) * 4; if (out[q + 3] > 0 && !(out[q] >= 250 && out[q+1] >= 250 && out[q+2] >= 250)) blank = false; }
+  if (blank && lmLen > 0) { try { const L = await _psdLayers(dv, u, lmData, psb, w, h, depth); if (L) return _cvOf(L, w, h); } catch (_) {} }
+  return _cvOf(out, w, h);
+}
+async function decodeTIFF(buf){   // strips or tiles, chunky or planar, 1..32 bit grey / palette / RGB(A) / CMYK; none, PackBits, LZW, Deflate or JPEG; classic or BigTIFF
+  const u = new Uint8Array(buf), dv = new DataView(buf), le = u[0] === 0x49, g16 = o => dv.getUint16(o, le), g32 = o => dv.getUint32(o, le), g64 = o => Number(dv.getBigUint64(o, le));
+  const mg = g16(2), big = mg === 43; if (mg !== 42 && !big) throw new Error("not a TIFF file");
+  const ifd = big ? g64(8) : g32(4), n = big ? g64(ifd) : g16(ifd), esz = big ? 20 : 12, T = {}, SZ = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8, 16: 8, 17: 8, 18: 8 };
+  for (let i = 0; i < n; i++) { const e = ifd + (big ? 8 : 2) + i * esz, tag = g16(e), ty = g16(e + 2), cnt = big ? g64(e + 4) : g32(e + 4), vo = e + (big ? 12 : 8), off = (SZ[ty] || 1) * cnt <= (big ? 8 : 4) ? vo : (big ? g64(vo) : g32(vo)), v = []; if (cnt > 2e7) continue;
+    if (ty === 3) for (let k = 0; k < cnt; k++) v.push(g16(off + k * 2)); else if (ty === 4) for (let k = 0; k < cnt; k++) v.push(g32(off + k * 4)); else if (ty === 16) for (let k = 0; k < cnt; k++) v.push(g64(off + k * 8)); else if (ty === 1 || ty === 7) for (let k = 0; k < cnt; k++) v.push(u[off + k]); T[tag] = v; }
+  const w = T[256][0], h = T[257][0], bps = (T[258] || [1])[0], comp = (T[259] || [1])[0], spp = (T[277] || [1])[0], planar = (T[284] || [1])[0], pred = (T[317] || [1])[0], sf = (T[339] || [1])[0];
+  let ph = (T[262] || [1])[0]; if (comp === 7 && ph === 6) ph = 2;
+  if (![1, 2, 4, 8, 16, 32].includes(bps)) throw new Error("this .tif bit depth isn't supported");
+  const tiled = !!T[322], cw = tiled ? T[322][0] : w, chh = tiled ? T[323][0] : (T[278] || [h])[0], offs = (tiled ? T[324] : T[273]) || [], cnts = (tiled ? T[325] : T[279]) || [];
+  const across = Math.ceil(w / cw), per = across * Math.ceil(h / chh), cs = planar === 2 ? 1 : spp, hb = bps === 16 ? (le ? 1 : 0) : bps === 32 ? (le ? 3 : 0) : 0, smp = new Uint8Array(w * h * spp);
+  const scale = ph === 3 ? 1 : 255 / ((1 << Math.min(bps, 8)) - 1);
+  const jpeg = async bytes => { const tb = T[347]; let d = bytes; if (tb) { d = new Uint8Array(tb.length - 2 + bytes.length - 2); d.set(tb.slice(0, tb.length - 2), 0); d.set(bytes.subarray(2), tb.length - 2); }
+    const bm = await createImageBitmap(new Blob([d], { type: "image/jpeg" })), c = document.createElement("canvas"); c.width = bm.width; c.height = bm.height; const cx = c.getContext("2d"); cx.drawImage(bm, 0, 0); return cx.getImageData(0, 0, c.width, c.height); };
+  for (let i = 0; i < offs.length && i < per * (planar === 2 ? spp : 1); i++) {
+    const pl = planar === 2 ? (i / per) | 0 : 0, k = i % per, tx = tiled ? k % across : 0, ty = tiled ? (k / across) | 0 : k, x0 = tx * cw, y0 = ty * chh;
+    const rows = tiled ? chh : Math.min(chh, h - y0); if (rows <= 0) continue; const rowB = Math.ceil(cw * cs * bps / 8), need = rows * rowB, cnt = cnts[i] != null ? cnts[i] : buf.byteLength - offs[i], src = u.subarray(offs[i], offs[i] + cnt);
+    if (comp === 7) { const im = await jpeg(src); for (let y = 0; y < im.height && y0 + y < h; y++) for (let x = 0; x < im.width && x0 + x < w; x++) for (let c = 0; c < spp; c++) smp[((y0 + y) * w + x0 + x) * spp + c] = c < 3 ? im.data[(y * im.width + x) * 4 + (spp >= 3 ? c : 0)] : 255; continue; }
+    let d;
+    if (comp === 1) d = u.slice(offs[i], offs[i] + need); else if (comp === 32773) d = _packBits(u, offs[i], offs[i] + cnt, need); else if (comp === 5) d = _lzw(src, need);
+    else if (comp === 8 || comp === 32946) { d = await _inflate(src); if (d.length < need) { const e = new Uint8Array(need); e.set(d); d = e; } }
+    else throw new Error("this .tif compression isn't supported (use none, LZW, PackBits, Deflate or JPEG)");
+    if (pred === 2) for (let y = 0; y < rows; y++) { const r0 = y * rowB; if (bps === 8) for (let x = cs; x < rowB; x++) d[r0 + x] = (d[r0 + x] + d[r0 + x - cs]) & 255; else if (bps === 16) for (let x = cs; x < cw * cs; x++) { const a = r0 + x * 2, b = a - cs * 2; const v = (le ? d[a] | d[a+1] << 8 : d[a] << 8 | d[a+1]) + (le ? d[b] | d[b+1] << 8 : d[b] << 8 | d[b+1]); if (le) { d[a] = v & 255; d[a+1] = (v >> 8) & 255; } else { d[a] = (v >> 8) & 255; d[a+1] = v & 255; } } }
+    const dd = bps === 32 ? new DataView(d.buffer, d.byteOffset, d.byteLength) : null;
+    for (let y = 0; y < rows; y++) { const Y = y0 + y; if (Y >= h) break; for (let x = 0; x < cw; x++) { const X = x0 + x; if (X >= w) break; for (let c = 0; c < cs; c++) { const j = x * cs + c, b0 = y * rowB; let v;
+      if (bps === 8) v = d[b0 + j]; else if (bps === 16) v = d[b0 + j * 2 + hb]; else if (bps === 32) v = sf === 3 ? _f2b(dd.getFloat32(b0 + j * 4, le)) : d[b0 + j * 4 + hb]; else { const bit = j * bps; v = (d[b0 + (bit >> 3)] >> (8 - bps - (bit & 7))) & ((1 << bps) - 1); }
+      smp[(Y * w + X) * spp + (planar === 2 ? pl : c)] = bps >= 8 ? v : v * scale; } } }
+  }
+  const S = (px, c) => smp[px * spp + c], cmap = T[320], out = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) { const o = i * 4; let r, g, b, a = 255;
+    if (ph === 2 && spp >= 3) { r = S(i, 0); g = S(i, 1); b = S(i, 2); if (spp >= 4) a = S(i, 3); }
+    else if (ph === 0 || ph === 1) { r = g = b = ph === 0 ? 255 - S(i, 0) : S(i, 0); if (spp >= 2) a = S(i, 1); }
+    else if (ph === 3 && cmap) { const k = S(i, 0), m = cmap.length / 3; r = cmap[k] >> 8; g = cmap[m + k] >> 8; b = cmap[2 * m + k] >> 8; }
+    else if (ph === 5 && spp >= 4) { const k = 255 - S(i, 3); r = (255 - S(i, 0)) * k / 255; g = (255 - S(i, 1)) * k / 255; b = (255 - S(i, 2)) * k / 255; }
+    else throw new Error("this .tif colour type isn't supported (use grey, palette, RGB or CMYK)");
+    out[o] = r; out[o+1] = g; out[o+2] = b; out[o+3] = a; }
+  return _cvOf(out, w, h);
+}
+let _bt = null;
+async function ktx2ToCanvas(buf){   // KTX2 / Basis Universal picture -> RGBA through the Basis transcoder (downloaded from the CDN once)
+  const base = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/";
+  if (!_bt) {
+    let js, wasm; try { [js, wasm] = await Promise.all([fetch(base + "basis_transcoder.js").then(r => r.text()), fetch(base + "basis_transcoder.wasm").then(r => r.arrayBuffer())]); } catch (e) { throw new Error("KTX2 pictures need internet the first time (decoder download)"); }
+    await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = URL.createObjectURL(new Blob([js], { type: "text/javascript" })); sc.onload = ok; sc.onerror = () => no(new Error("the KTX2 decoder could not start")); document.head.appendChild(sc); });
+    _bt = await window.BASIS({ wasmBinary: wasm }); if (_bt.initializeBasis) _bt.initializeBasis();
+  }
+  const f = new _bt.KTX2File(new Uint8Array(buf));
+  try {
+    if (!f.isValid()) throw new Error("not a usable KTX2 picture"); const w = f.getWidth(), h = f.getHeight();
+    if (!f.startTranscoding()) throw new Error("the KTX2 picture can't be transcoded");
+    const dst = new Uint8Array(f.getImageTranscodedSizeInBytes(0, 0, 0, 13)); if (!f.transcodeImage(dst, 0, 0, 0, 13, 0, -1, -1)) throw new Error("the KTX2 picture can't be transcoded");   // 13 = RGBA32
+    return _cvOf(new Uint8ClampedArray(dst.buffer, dst.byteOffset, w * h * 4), w, h);
+  } finally { f.close(); f.delete(); }
+}
+async function decodeSpecialImage(f){   // canvas for DDS / PSD / TIFF / TGA pictures, null when the browser can read the picture itself
+  const buf = _ab(f.buf), u = new Uint8Array(buf, 0, Math.min(12, buf.byteLength)), nm = String(f.name || "");
+  if (u[0] === 0x44 && u[1] === 0x44 && u[2] === 0x53 && u[3] === 0x20) return decodeDDS(buf);
+  if (u[0] === 0x38 && u[1] === 0x42 && u[2] === 0x50 && u[3] === 0x53) return decodePSD(buf);
+  if ((u[0] === 0x49 && u[1] === 0x49 && (u[2] === 0x2A || u[2] === 0x2B) && u[3] === 0) || (u[0] === 0x4D && u[1] === 0x4D && u[2] === 0 && (u[3] === 0x2A || u[3] === 0x2B))) return decodeTIFF(buf);
+  const native = (u[0] === 0x89 && u[1] === 0x50) || (u[0] === 0xFF && u[1] === 0xD8) || (u[0] === 0x52 && u[1] === 0x49) || (u[0] === 0x47 && u[1] === 0x49) || (u[0] === 0x42 && u[1] === 0x4D);
+  if (u[0] === 0xAB && u[1] === 0x4B && u[2] === 0x54 && u[3] === 0x58 && u[4] === 0x20 && u[5] === 0x32) return ktx2ToCanvas(buf);   // «KTX 20»
+  if (/\.tga$/i.test(nm) && !native) return decodeTGA(buf);
+  return null;
+}
+
+// ---- per-vertex colours: each triangle gets its average colour, the colours are packed into a small palette picture and every triangle points at its square ----
+const nativeVC = () => { try { return !!(window.RCBridge && typeof window.RCBridge.rMeshC === "function"); } catch (_) { return false; } };   // the phone app draws per-vertex colours itself (new app) or not (old app: colours are baked into a picture)
+const _s2lin = v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+async function applyVC(g, texFn){
+  if (!g.VC || g.t) { g.VC = null; return; }
+  const n = g.P.length / 9; if (!g.VC.some(Boolean)) { g.VC = null; return; }
+  const cols = []; for (let k = 0; k < n; k++) { const v = g.VC[k]; cols.push(v ? [0, 1, 2].map(j => (v[0][j] + v[1][j] + v[2][j]) / 3 * g.c[j]) : g.c); }
+  let sh = 0, map, list, keys;
+  for (;; sh++) {   // 8-bit exact colours; more than 4096 different ones -> coarser steps until they fit
+    map = new Map(); list = []; keys = new Array(n);
+    for (let k = 0; k < n; k++) { const c = cols[k], r = Math.round(c[0] * 255) >> sh, gg = Math.round(c[1] * 255) >> sh, b = Math.round(c[2] * 255) >> sh, key = (r << 16) | (gg << 8) | b; let ix = map.get(key); if (ix === undefined) { ix = list.length; map.set(key, ix); const q = v => Math.min(255, (v << sh) + (sh ? 1 << (sh - 1) : 0)); list.push([q(r), q(gg), q(b)]); } keys[k] = ix; }
+    if (list.length <= 4096 || sh >= 6) break;
+  }
+  g.VC = null;
+  if (list.length === 1) { g.c = list[0].map(v => v / 255); return; }
+  const W = Math.ceil(Math.sqrt(list.length)), H = Math.ceil(list.length / W), B = 4, cv = document.createElement("canvas"); cv.width = W * B; cv.height = H * B;
+  const cx = cv.getContext("2d"); list.forEach((c, i) => { cx.fillStyle = "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; cx.fillRect((i % W) * B, ((i / W) | 0) * B, B, B); });
+  const blob = await new Promise(ok => cv.toBlob(ok, "image/png")), url = blob ? await texFn({ name: "vertex-colors.png", buf: await blob.arrayBuffer(), mime: "image/png" }) : null;
+  if (!url) { let r = 0, gg = 0, b = 0; for (const c of cols) { r += c[0]; gg += c[1]; b += c[2]; } g.c = [r / n, gg / n, b / n]; return; }
+  g.t = url; g.c = [1, 1, 1];
+  for (let k = 0; k < n; k++) { const ix = keys[k], u = ((ix % W) + 0.5) / W, v = (((ix / W) | 0) + 0.5) / H; g.T[k*6] = u; g.T[k*6+1] = v; g.T[k*6+2] = u; g.T[k*6+3] = v; g.T[k*6+4] = u; g.T[k*6+5] = v; }
+}
+
+// ---- pictures / files a model asks for that were not picked: a small bar with a button to pick them, then the model is rebuilt in the same spot ----
+function missingBanner(names, retry){
+  const old = document.getElementById("mdMiss"); if (old) old.remove();
+  const d = document.createElement("div"); d.id = "mdMiss";
+  d.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:50;max-width:92vw;background:#222;color:#fff;padding:10px 14px;border-radius:10px;font:14px system-ui,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 2px 12px #0008";
+  const t = document.createElement("span"); t.textContent = "Missing: " + names.slice(0, 3).join(", ") + (names.length > 3 ? " +" + (names.length - 3) + " more" : "");
+  const b = document.createElement("button"), x = document.createElement("button");
+  b.textContent = "Pick files"; b.style.cssText = "background:#3b82f6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font:inherit"; x.textContent = "✕"; x.style.cssText = "background:none;color:#aaa;border:0;font:inherit";
+  b.onclick = () => { const inp = document.createElement("input"); inp.type = "file"; inp.multiple = true; inp.onchange = () => { const fl = [...inp.files]; d.remove(); if (fl.length) retry(fl); }; inp.click(); };
+  x.onclick = () => d.remove(); d.append(t, b, x); document.body.appendChild(d); setTimeout(() => d.remove(), 90000);
+}
 
 function newGroup(name){ return { name, c: [0.8, 0.8, 0.8], a: 1, t: null, P: [], N: [], T: [], tex: null }; }
 function flatN(P, i){   // face normal of the triangle that starts at vertex i
   const ax = P[i*3+3] - P[i*3], ay = P[i*3+4] - P[i*3+1], az = P[i*3+5] - P[i*3+2], bx = P[i*3+6] - P[i*3], by = P[i*3+7] - P[i*3+1], bz = P[i*3+8] - P[i*3+2];
   let x = ay * bz - az * by, y = az * bx - ax * bz, z = ax * by - ay * bx; const l = Math.hypot(x, y, z) || 1; return [x / l, y / l, z / l];
 }
-function mdTri(g, p0, p1, p2, n0, n1, n2, t0, t1, t2){   // n* / t* may be null
+function mdTri(g, p0, p1, p2, n0, n1, n2, t0, t1, t2, col){   // n* / t* / col may be null; col = vertex colour of the triangle
   const i = g.P.length / 3; g.P.push(...p0, ...p1, ...p2);
   const fn = (n0 && n1 && n2) ? null : flatN(g.P, i);
   g.N.push(...(n0 || fn), ...(n1 || fn), ...(n2 || fn));
   g.T.push(...(t0 || [0, 0]), ...(t1 || [0, 0]), ...(t2 || [0, 0]));
+  if (col) { if (!g.VC) g.VC = new Array(g.P.length / 9 - 1).fill(null); g.VC.push(col); } else if (g.VC) g.VC.push(null);
 }
 
 // ---------- OBJ + MTL ----------
@@ -1660,7 +1979,7 @@ async function parseOBJ(text, files, texFn){
   for (const raw of text.split(/\r?\n/)) {
     const l = raw.trim(); if (!l || l.charCodeAt(0) === 35) continue;
     const sp = l.split(/\s+/), k = sp[0];
-    if (k === "v") V.push([+sp[1], +sp[2], +sp[3]]);
+    if (k === "v") { const pv = [+sp[1], +sp[2], +sp[3]]; if (sp.length >= 7) { const cc = [+sp[4], +sp[5], +sp[6]]; if (cc.every(isFinite)) { if (cc.some(v => v > 1.0001)) for (let q = 0; q < 3; q++) cc[q] /= 255; pv.c = cc; } } V.push(pv); }
     else if (k === "vt") VT.push([+sp[1], 1 - (+sp[2] || 0)]);   // OBJ v is 0 at the bottom, the picture is stored from the top
     else if (k === "vn") VN.push([+sp[1], +sp[2], +sp[3]]);
     else if (k === "usemtl") cur = G(sp.slice(1).join(" "));
@@ -1668,13 +1987,13 @@ async function parseOBJ(text, files, texFn){
     else if (k === "f" && sp.length >= 4) {
       const vs = [];
       for (let j = 1; j < sp.length; j++) { const t = sp[j].split("/"), p = V[ix(t[0], V.length)]; if (!p) continue; vs.push({ p, t: t[1] ? VT[ix(t[1], VT.length)] : null, n: t[2] ? VN[ix(t[2], VN.length)] : null }); }
-      for (let j = 1; j + 1 < vs.length; j++) { const a = vs[0], b = vs[j], c = vs[j + 1]; mdTri(cur, a.p, b.p, c.p, a.n, b.n, c.n, a.t, b.t, c.t); }
+      for (let j = 1; j + 1 < vs.length; j++) { const a = vs[0], b = vs[j], c = vs[j + 1]; mdTri(cur, a.p, b.p, c.p, a.n, b.n, c.n, a.t, b.t, c.t, a.p.c && b.p.c && c.p.c ? [a.p.c, b.p.c, c.p.c] : null); }
     }
   }
   // materials
   const mats = new Map();
   for (const lib of libs) {
-    const f = files.get(baseName(lib)); if (!f) continue;
+    const f = findFile(files, lib, /\.mtl$/i); if (!f) continue;
     let m = null;
     for (const raw of new TextDecoder().decode(f.buf).split(/\r?\n/)) {
       const l = raw.trim(); if (!l || l[0] === "#") continue; const sp = l.split(/\s+/), k = sp[0].toLowerCase();
@@ -1683,14 +2002,14 @@ async function parseOBJ(text, files, texFn){
       else if (k === "kd") m.c = [+sp[1], +sp[2], +sp[3]].map(v => isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.8);
       else if (k === "d") m.a = isFinite(+sp[1]) ? Math.min(1, Math.max(0, +sp[1])) : 1;
       else if (k === "tr") m.a = isFinite(+sp[1]) ? Math.min(1, Math.max(0, 1 - sp[1])) : 1;
-      else if (k === "map_kd") m.tex = sp[sp.length - 1];
+      else if (k === "map_kd" || (k === "map_ka" && !m.tex2)) { const t = sp.slice(1).join(" ").replace(/^(?:-\w+(?:\s+[-\d.]+)*\s+)+/, "").trim() || sp[sp.length - 1]; if (k === "map_kd") m.tex = t; else m.tex2 = t; }
     }
   }
   const out = [];
   for (const g of groups.values()) {
     if (!g.P.length) continue;
     const m = mats.get(g.name);
-    if (m) { g.c = m.c; g.a = m.a; if (m.tex) { const f = files.get(baseName(m.tex)); if (f) g.t = await texFn(f); } }
+    if (m) { g.c = m.c; g.a = m.a; const tf = m.tex || m.tex2; if (tf) { const f = findFile(files, tf, "img"); if (f) g.t = await texFn(f); } }
     out.push(g);
   }
   return out;
@@ -1749,13 +2068,16 @@ async function parsePLY(buf, files, texFn){
   }
   const g = newGroup("ply"); g.c = [0.72, 0.74, 0.78];
   const hasN = verts.length && "nx" in verts[0], uK = verts.length ? ["s", "u", "texture_u", "texture_s"].find(k => k in verts[0]) : null, vK = verts.length ? ["t", "v", "texture_v", "texture_t"].find(k => k in verts[0]) : null;
-  if (verts.length && "red" in verts[0]) { let r = 0, gg = 0, b = 0; for (const v of verts) { r += v.red; gg += v.green; b += v.blue; } const k = 1 / (255 * verts.length); g.c = [r * k, gg * k, b * k]; }
+  const rK = verts.length ? ["red", "diffuse_red", "r"].find(k => k in verts[0]) : null, gK = rK === "red" ? "green" : rK === "r" ? "g" : "diffuse_green", bK = rK === "red" ? "blue" : rK === "r" ? "b" : "diffuse_blue";
+  const vel = els.find(e => e.name === "vertex"), rpp = rK && vel && vel.props.find(q => q.name === rK), csc = rpp && /float|double/.test(rpp.t) ? 1 : 1 / 255, hasC = rK && gK in verts[0] && bK in verts[0];
+  if (hasC) { let r = 0, gg = 0, b = 0; for (const v of verts) { r += v[rK]; gg += v[gK]; b += v[bK]; } const k = csc / verts.length; g.c = [r * k, gg * k, b * k]; }
+  const vcol = v => [rK, gK, bK].map(q => Math.min(1, Math.max(0, v[q] * csc))), tcol = (a, b, c) => hasC ? [vcol(a), vcol(b), vcol(c)] : null;
   const vp = v => [v.x, v.y, v.z], vn = v => hasN ? [v.nx, v.ny, v.nz] : null, vt = v => uK && vK ? [v[uK], 1 - v[vK]] : null;
   for (const f of faces) {
     const ids = f.vertex_indices || f.vertex_index; if (!ids) continue;
-    for (let j = 1; j + 1 < ids.length; j++) { const a = verts[ids[0]], b = verts[ids[j]], c = verts[ids[j + 1]]; if (a && b && c) mdTri(g, vp(a), vp(b), vp(c), vn(a), vn(b), vn(c), vt(a), vt(b), vt(c)); }
+    for (let j = 1; j + 1 < ids.length; j++) { const a = verts[ids[0]], b = verts[ids[j]], c = verts[ids[j + 1]]; if (a && b && c) mdTri(g, vp(a), vp(b), vp(c), vn(a), vn(b), vn(c), vt(a), vt(b), vt(c), tcol(a, b, c)); }
   }
-  if (texFile && files) { const f = files.get(baseName(texFile)); if (f) g.t = await texFn(f); }
+  if (texFile && files) { const f = findFile(files, texFile, "img"); if (f) g.t = await texFn(f); }
   return [g];
 }
 
@@ -1768,9 +2090,30 @@ const _inv3T = m => { const a = m[0], b = m[1], c = m[2], d = m[4], e = m[5], f 
   return [A / det, (c * h - b * i) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, (c * d - a * f) / det, C / det, (b * g - a * h) / det, (a * e - b * d) / det]; };   // (inverse of the 3x3, column-major) -> used as its own transpose below
 const _lin2s = v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
 
+// ---- compressed glTF: Draco (geometry) and meshopt (buffers) are decoded by small decoders fetched from the CDN the first time ----
+let _dl = null;
+async function dracoGeom(json, bins, ext){
+  const bv = json.bufferViews[ext.bufferView], src = new Uint8Array(bins[bv.buffer], bv.byteOffset || 0, bv.byteLength);
+  if (!_dl) { let m; try { m = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js/+esm"); } catch (e) { throw new Error("Draco-compressed glTF needs internet the first time (decoder download)"); }
+    _dl = new m.DRACOLoader(); _dl.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/"); }
+  const map = { POSITION: "position", NORMAL: "normal", COLOR_0: "color", TEXCOORD_0: "uv", TEXCOORD_1: "uv1" }, ids = {}, types = {};
+  for (const k in map) if (ext.attributes && ext.attributes[k] != null) { ids[map[k]] = ext.attributes[k]; types[map[k]] = "Float32Array"; }
+  const geo = await new Promise((ok, no) => _dl.decodeDracoFile(src.slice().buffer, ok, ids, types, undefined, no));
+  const A = n => geo.attributes[n] ? { a: geo.attributes[n].array, c: geo.attributes[n].itemSize } : null, pos = A("position"), nr = A("normal"), uv = A("uv"), uv1 = A("uv1"), col = A("color");
+  if (!pos) throw new Error("the Draco data has no positions");
+  return { P: pos.a, N: nr && nr.a, T: uv && uv.a, T1: uv1 && uv1.a, C: col && col.a, cn: col ? col.c : 3, I: geo.index ? geo.index.array : null };
+}
+async function meshoptPrep(json, bins, dec){   // replaces every meshopt-compressed bufferView by plain data in a new buffer
+  if (!dec) { try { dec = (await import("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js")).MeshoptDecoder; } catch (e) { throw new Error("meshopt-compressed glTF needs internet the first time (decoder download)"); } }
+  if (dec.ready) await dec.ready;
+  for (const bv of json.bufferViews || []) { const ex = bv.extensions && bv.extensions.EXT_meshopt_compression; if (!ex) continue;
+    const src = new Uint8Array(bins[ex.buffer], ex.byteOffset || 0, ex.byteLength), out = new Uint8Array(ex.count * ex.byteStride);
+    dec.decodeGltfBuffer(out, ex.count, ex.byteStride, src, ex.mode, ex.filter || "NONE");
+    bins.push(out.buffer); bv.buffer = bins.length - 1; bv.byteOffset = 0; bv.byteLength = out.length; bv.byteStride = ex.byteStride; delete bv.extensions.EXT_meshopt_compression; }
+}
 async function parseGLTF(json, bins, files, texFn){
   const CT = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }, NC = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
-  if ((json.extensionsRequired || []).some(e => /draco|meshopt/i.test(e))) throw new Error("compressed glTF (Draco / meshopt) is not supported: export it without compression");
+  if ((json.bufferViews || []).some(bv => bv.extensions && bv.extensions.EXT_meshopt_compression)) await meshoptPrep(json, bins);
   const readAcc = i => {
     const a = json.accessors[i], n = NC[a.type], out = new Float32Array(a.count * n);
     if (a.bufferView != null) {
@@ -1783,18 +2126,28 @@ async function parseGLTF(json, bins, files, texFn){
         out[k * n + j] = v;
       }
     }
+    if (a.sparse) {   // a few values replaced on top of the base data (morph targets, edited meshes)
+      const sp = a.sparse, ib = json.bufferViews[sp.indices.bufferView], vb = json.bufferViews[sp.values.bufferView], idv = new DataView(bins[ib.buffer]), vdv = new DataView(bins[vb.buffer]), isz = CT[sp.indices.componentType], sz = CT[a.componentType], ct = a.componentType;
+      for (let k = 0; k < sp.count; k++) {
+        const io = (ib.byteOffset || 0) + (sp.indices.byteOffset || 0) + k * isz, ix = isz === 1 ? idv.getUint8(io) : isz === 2 ? idv.getUint16(io, true) : idv.getUint32(io, true);
+        for (let j = 0; j < n; j++) { const o = (vb.byteOffset || 0) + (sp.values.byteOffset || 0) + (k * n + j) * sz; let v;
+          if (ct === 5126) v = vdv.getFloat32(o, true); else if (ct === 5123) v = vdv.getUint16(o, true); else if (ct === 5125) v = vdv.getUint32(o, true); else if (ct === 5121) v = vdv.getUint8(o); else if (ct === 5122) v = vdv.getInt16(o, true); else v = vdv.getInt8(o);
+          if (a.normalized) v = ct === 5121 ? v / 255 : ct === 5123 ? v / 65535 : ct === 5122 ? Math.max(v / 32767, -1) : Math.max(v / 127, -1);
+          out[ix * n + j] = v; }
+      }
+    }
     return out;
   };
   const texCache = new Map();
   const texOf = async ti => {
     if (ti == null) return null; if (texCache.has(ti)) return texCache.get(ti);
-    let url = null; const im = json.images && json.images[(json.textures[ti] || {}).source];
+    let url = null; const tx = json.textures[ti] || {}, ex = tx.extensions || {}, src = tx.source != null ? tx.source : (ex.KHR_texture_basisu || ex.EXT_texture_webp || ex.EXT_texture_avif || {}).source, im = json.images && json.images[src];
     if (im) {
-      let bytes = null, mime = im.mimeType || "image/png";
+      let bytes = null, mime = im.mimeType || "image/png", name = im.name || "tex";
       if (im.bufferView != null) { const bv = json.bufferViews[im.bufferView]; bytes = new Uint8Array(bins[bv.buffer], bv.byteOffset || 0, bv.byteLength).slice().buffer; }
       else if (im.uri && im.uri.startsWith("data:")) { const c = im.uri.indexOf(","); mime = im.uri.slice(5, im.uri.indexOf(";")); const bin = atob(im.uri.slice(c + 1)); const u = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k); bytes = u.buffer; }
-      else if (im.uri) { const f = files.get(baseName(decodeURIComponent(im.uri))); if (f) { bytes = f.buf; mime = /\.jpe?g$/i.test(f.name) ? "image/jpeg" : "image/png"; } }
-      if (bytes) url = await texFn({ name: im.name || "tex", buf: bytes, mime });
+      else if (im.uri) { const f = findFile(files, im.uri, "img"); if (f) { bytes = f.buf; mime = /\.jpe?g$/i.test(f.name) ? "image/jpeg" : "image/png"; name = f.name; } }
+      if (bytes) url = await texFn({ name, buf: bytes, mime });
     }
     texCache.set(ti, url); return url;
   };
@@ -1808,6 +2161,7 @@ async function parseGLTF(json, bins, files, texFn){
       const f = pbr.baseColorFactor || (sg && sg.diffuseFactor) || [1, 1, 1, 1];
       g.c = [_lin2s(f[0]), _lin2s(f[1]), _lin2s(f[2])]; if (m.alphaMode === "BLEND") g.a = f[3];
       const ti = pbr.baseColorTexture ? pbr.baseColorTexture.index : sg && sg.diffuseTexture ? sg.diffuseTexture.index : null;
+      const bt = pbr.baseColorTexture || (sg && sg.diffuseTexture); if (bt) { g.uvi = bt.texCoord || 0; const tr = bt.extensions && bt.extensions.KHR_texture_transform; if (tr) { g.tr = tr; if (tr.texCoord != null) g.uvi = tr.texCoord; } }
       g.t = await texOf(ti);
     }
     return g;
@@ -1815,16 +2169,21 @@ async function parseGLTF(json, bins, files, texFn){
   const addPrim = async (prim, M, NM) => {
     if (!prim.attributes || prim.attributes.POSITION == null) return;
     const mode = prim.mode == null ? 4 : prim.mode; if (mode < 4) return;
-    const P = readAcc(prim.attributes.POSITION), N = prim.attributes.NORMAL != null ? readAcc(prim.attributes.NORMAL) : null, T = prim.attributes.TEXCOORD_0 != null ? readAcc(prim.attributes.TEXCOORD_0) : null;
-    let I; if (prim.indices != null) I = readAcc(prim.indices); else { I = new Float32Array(P.length / 3); for (let k = 0; k < I.length; k++) I[k] = k; }
+    const dre = prim.extensions && prim.extensions.KHR_draco_mesh_compression, DG = dre ? await dracoGeom(json, bins, dre) : null;
+    const P = DG ? DG.P : readAcc(prim.attributes.POSITION), N = DG ? DG.N : prim.attributes.NORMAL != null ? readAcc(prim.attributes.NORMAL) : null; let T = DG ? DG.T : prim.attributes.TEXCOORD_0 != null ? readAcc(prim.attributes.TEXCOORD_0) : null;
+    let I; if (DG) { I = DG.I || (() => { const q = new Float32Array(P.length / 3); for (let k = 0; k < q.length; k++) q[k] = k; return q; })(); } else if (prim.indices != null) I = readAcc(prim.indices); else { I = new Float32Array(P.length / 3); for (let k = 0; k < I.length; k++) I[k] = k; }
     const tris = []; if (mode === 4) { for (let k = 0; k + 2 < I.length; k += 3) tris.push(I[k], I[k + 1], I[k + 2]); }
     else if (mode === 5) { for (let k = 0; k + 2 < I.length; k++) k & 1 ? tris.push(I[k + 1], I[k], I[k + 2]) : tris.push(I[k], I[k + 1], I[k + 2]); }
     else { for (let k = 1; k + 1 < I.length; k++) tris.push(I[0], I[k], I[k + 1]); }
     const g = await matGroup(prim.material);
+    if (g.uvi) { const k = "TEXCOORD_" + g.uvi; if (DG ? DG.T1 && g.uvi === 1 : prim.attributes[k] != null) T = DG ? DG.T1 : readAcc(prim.attributes[k]); }   // the picture uses another uv set
+    let CC = null, cn = 3; if (DG ? DG.C : prim.attributes.COLOR_0 != null) { CC = DG ? DG.C : readAcc(prim.attributes.COLOR_0); cn = DG ? DG.cn : NC[json.accessors[prim.attributes.COLOR_0].type] || 3; }   // COLOR_0 (linear) x the material colour
+    const cvv = i => [0, 1, 2].map(j => _lin2s(Math.min(1, Math.max(0, CC[i * cn + j])))), tcol = (a, b, c) => CC ? [cvv(a), cvv(b), cvv(c)] : null;   // COLOR_0 (linear) -> picture colours; the material colour multiplies it in the renderer
     const tp = i => { const x = P[i*3], y = P[i*3+1], z = P[i*3+2]; return [M[0]*x + M[4]*y + M[8]*z + M[12], M[1]*x + M[5]*y + M[9]*z + M[13], M[2]*x + M[6]*y + M[10]*z + M[14]]; };
     const tn = i => { if (!N) return null; const x = N[i*3], y = N[i*3+1], z = N[i*3+2]; const a = NM[0]*x + NM[3]*y + NM[6]*z, b = NM[1]*x + NM[4]*y + NM[7]*z, c = NM[2]*x + NM[5]*y + NM[8]*z, l = Math.hypot(a, b, c) || 1; return [a / l, b / l, c / l]; };
-    const tt = i => T ? [T[i*2], T[i*2+1]] : null;
-    for (let k = 0; k + 2 < tris.length; k += 3) { const a = tris[k], b = tris[k+1], c = tris[k+2]; mdTri(g, tp(a), tp(b), tp(c), tn(a), tn(b), tn(c), tt(a), tt(b), tt(c)); }
+    const tr = g.tr, so = tr && tr.offset || [0, 0], ss = tr && tr.scale || [1, 1], sr = Math.sin(tr && tr.rotation || 0), cr = Math.cos(tr && tr.rotation || 0);   // KHR_texture_transform: offset + rotation + scale of the picture
+    const tt = i => { if (!T) return null; let u = T[i*2], v = T[i*2+1]; if (tr) { const a = u * ss[0], b = v * ss[1]; u = cr * a + sr * b + so[0]; v = -sr * a + cr * b + so[1]; } return [u, v]; };
+    for (let k = 0; k + 2 < tris.length; k += 3) { const a = tris[k], b = tris[k+1], c = tris[k+2]; mdTri(g, tp(a), tp(b), tp(c), tn(a), tn(b), tn(c), tt(a), tt(b), tt(c), tcol(a, b, c)); }
   };
   const nodes = json.nodes || [], isChild = new Set(); nodes.forEach(n => (n.children || []).forEach(c => isChild.add(c)));
   const walk = async (ni, parent) => {
@@ -1848,19 +2207,21 @@ async function parseGLB(buf, files, texFn){
   return parseGLTF(json, bins, files, texFn);
 }
 function extBuf(b, files){
+  if (!b.uri && b.extensions && b.extensions.EXT_meshopt_compression) return new ArrayBuffer(0);   // meshopt "fallback" buffer: no data on purpose
   if (b.uri && b.uri.startsWith("data:")) { const s = atob(b.uri.slice(b.uri.indexOf(",") + 1)), u = new Uint8Array(s.length); for (let k = 0; k < s.length; k++) u[k] = s.charCodeAt(k); return u.buffer; }
-  const f = b.uri && files.get(baseName(decodeURIComponent(b.uri))); if (!f) throw new Error("glTF needs its .bin file: select it together with the .gltf (or use a .zip / .glb)");
+  const f = b.uri && findFile(files, b.uri, /\.(bin|dat)$/i); if (!f) throw new Error("glTF needs its .bin file: select it together with the .gltf (or use a .zip / .glb)");
   return f.buf;
 }
 
 // ---------- more formats: OFF, Collada (.dae), 3MF, and (downloaded on first use) FBX / 3DS / VRML / AMF / USDZ ----------
 // addTris: push triangles through a column-major 4x4 (M may be null). P xyz per vertex, N xyz / T uv optional, I = optional triangle index list.
-function addTris(g, P, N, T, I, M, flipV){
+function addTris(g, P, N, T, I, M, flipV, C, cn, lin, cmul){
   const n = I ? I.length : P.length / 3, K = M ? _inv3T([M[0], M[1], M[2], M[4], M[5], M[6], M[8], M[9], M[10]]) : null;   // K = normal matrix, row-major
   const tp = i => { const x = P[i*3], y = P[i*3+1], z = P[i*3+2]; return M ? [M[0]*x + M[4]*y + M[8]*z + M[12], M[1]*x + M[5]*y + M[9]*z + M[13], M[2]*x + M[6]*y + M[10]*z + M[14]] : [x, y, z]; };
   const tn = i => { if (!N) return null; const x = N[i*3], y = N[i*3+1], z = N[i*3+2]; if (!K) return [x, y, z]; const a = K[0]*x + K[1]*y + K[2]*z, b = K[3]*x + K[4]*y + K[5]*z, c = K[6]*x + K[7]*y + K[8]*z, l = Math.hypot(a, b, c) || 1; return [a / l, b / l, c / l]; };
   const tt = i => T ? [T[i*2], flipV ? 1 - T[i*2+1] : T[i*2+1]] : null;
-  for (let k = 0; k + 2 < n; k += 3) { const a = I ? I[k] : k, b = I ? I[k+1] : k + 1, c = I ? I[k+2] : k + 2; mdTri(g, tp(a), tp(b), tp(c), tn(a), tn(b), tn(c), tt(a), tt(b), tt(c)); }
+  const cv = i => [0, 1, 2].map(j => { const v = Math.min(1, Math.max(0, C[i * cn + j])); return lin ? _lin2s(v) : v; }), tc = (a, b, c) => C ? [cv(a), cv(b), cv(c)] : null;   // the three vertex colours of a triangle
+  for (let k = 0; k + 2 < n; k += 3) { const a = I ? I[k] : k, b = I ? I[k+1] : k + 1, c = I ? I[k+2] : k + 2; mdTri(g, tp(a), tp(b), tp(c), tn(a), tn(b), tn(c), tt(a), tt(b), tt(c), tc(a, b, c)); }
 }
 const _MI = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], _ZUP = [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1];   // _ZUP: (x, y, z) -> (x, z, -y)
 
@@ -1895,7 +2256,7 @@ async function parseDAE(text, files, texFn){
     if (tx) {
       const sid = n => tag(ef, "newparam").find(p => p.getAttribute("sid") === n); let name = tx.getAttribute("texture"), img = ref(name);
       for (let hop = 0; !img && hop < 3 && name; hop++) { const np = sid(name); if (!np) break; const s = tag(np, "source")[0] || tag(np, "init_from")[0]; name = s && s.textContent.trim(); img = name && ref(name); }
-      const pth = img && (tag(img, "init_from")[0] || img).textContent.trim(), f = pth && files.get(baseName(decodeURIComponent(pth.replace(/^file:\/+/, ""))));
+      const pth = img && (tag(img, "init_from")[0] || img).textContent.trim(), f = pth && findFile(files, pth, "img");
       if (f) { info.t = await texFn({ name: f.name, buf: f.buf }); if (info.t) info.c = [1, 1, 1]; }
     }
     return info;
@@ -1998,28 +2359,46 @@ async function parse3MF(buf){
 }
 
 // ---------- FBX / 3DS / VRML / AMF / USDZ: three.js readers, fetched from the CDN the first time one is used ----------
-const THREE_LOADERS = { fbx: ["FBXLoader", 0], "3ds": ["TDSLoader", 0], wrl: ["VRMLLoader", 1], vrml: ["VRMLLoader", 1], amf: ["AMFLoader", 0], usdz: ["USDZLoader", 0] };
+const THREE_LOADERS = { fbx: ["FBXLoader", 0], "3ds": ["TDSLoader", 0], wrl: ["VRMLLoader", 1], vrml: ["VRMLLoader", 1], amf: ["AMFLoader", 0], usdz: ["USDZLoader", 0], x3d: ["X3DLoader", 1], lwo: ["LWOLoader", 0], vtk: ["VTKLoader", 0], drc: ["DRACOLoader", 0] };
 async function parseViaThree(kind, buf, files, texFn){
   const def = THREE_LOADERS[kind]; if (!def) throw new Error("." + kind + " files are not supported");
   let mod; try { mod = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/" + def[0] + ".js/+esm"); }
   catch (e) { throw new Error("the ." + kind + " reader could not be downloaded (needs internet the first time)"); }
-  const obj = new mod[def[0]]().parse(def[1] ? new TextDecoder().decode(buf) : buf, "");
+  // the reader looks textures up by name: hand it the picked / zipped pictures through a url modifier (blob links)
+  let mgr = null; const blobs = [], conv = new Map();
+  try {
+    const TH = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/+esm"); mgr = new TH.LoadingManager();
+    for (const e of (files._all || [])) if (IMG_RE.test(String(e.name))) {     // every picture becomes a png/jpg blob link (tga and odd formats are converted here)
+      try { let bl; const spc = await decodeSpecialImage(e); if (spc) bl = await new Promise(ok => spc.toBlob(ok, "image/png")); else bl = new Blob([e.buf], { type: /\.jpe?g$/i.test(e.name) ? "image/jpeg" : /\.webp$/i.test(e.name) ? "image/webp" : /\.gif$/i.test(e.name) ? "image/gif" : /\.bmp$/i.test(e.name) ? "image/bmp" : "image/png" });
+        const u = URL.createObjectURL(bl); blobs.push(u); conv.set(e, u); } catch (_) {} }
+    mgr.setURLModifier(u => { if (/^(blob:|data:)/.test(u)) return u; const f = findFile(files, u, "img"); return f && conv.get(f) || u; });
+  } catch (_) { mgr = null; }
+  let obj; const TH2 = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/+esm");
+  if (kind === "drc") { const dl = new mod.DRACOLoader(); dl.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/"); obj = await new Promise((ok, no) => dl.decodeDracoFile(_ab(buf).slice(0), ok, undefined, undefined, undefined, no)); }
+  else obj = new mod[def[0]](mgr || undefined).parse(def[1] ? new TextDecoder().decode(buf) : buf, "");
+  if (obj && obj.isBufferGeometry) obj = new TH2.Mesh(obj, new TH2.MeshStandardMaterial({ color: 0xcccccc, vertexColors: !!obj.attributes.color }));   // readers that return bare geometry (.drc, .vtk)
+  else if (obj && obj.meshes && !obj.isObject3D) { const gr = new TH2.Group(); obj.meshes.forEach(m => gr.add(m)); obj = gr; }                                 // .lwo
   obj.updateMatrixWorld(true); const groups = new Map(), metas = [];
+  // textures load asynchronously: wait until every picture is ready before reading it
+  const waits = []; obj.traverse(o => { if (!o.isMesh) return; for (const m of (Array.isArray(o.material) ? o.material : [o.material])) { const im = m && m.map && m.map.image; if (im && im.addEventListener && !(im.complete && im.naturalWidth)) waits.push(new Promise(ok => { im.addEventListener("load", ok); im.addEventListener("error", ok); setTimeout(ok, 10000); })); } });
+  if (waits.length) await Promise.all(waits);
   obj.traverse(o => { if (o.isMesh && o.geometry && o.geometry.attributes.position) metas.push(o); });
   for (const o of metas) {
     const ge = o.geometry, pos = ge.attributes.position, nrm = ge.attributes.normal, uv = ge.attributes.uv, idx = ge.index, mats = Array.isArray(o.material) ? o.material : [o.material];
     const rd = (a, n) => { const out = new Float32Array(a.count * n); for (let i = 0; i < a.count; i++) { out[i*n] = a.getX(i); out[i*n+1] = a.getY(i); if (n > 2) out[i*n+2] = a.getZ(i); } return out; };
+    const CA = ge.attributes.color, CV = CA ? (() => { const o = new Float32Array(CA.count * 3); for (let i = 0; i < CA.count; i++) { o[i*3] = CA.getX(i); o[i*3+1] = CA.getY(i); o[i*3+2] = CA.getZ(i); } return o; })() : null;
     const P = rd(pos, 3), N = nrm ? rd(nrm, 3) : null, T = uv ? rd(uv, 2) : null, all = idx ? Array.from(idx.array) : null;
     const runs = ge.groups && ge.groups.length ? ge.groups : [{ start: 0, count: idx ? idx.count : pos.count, materialIndex: 0 }];
     for (const r of runs) {
-      const m = mats[r.materialIndex] || mats[0] || {}, hexs = m.color && m.color.getHexString ? m.color.getHexString() : "b8bdc7", key = hexs + "|" + (m.opacity == null ? 1 : m.opacity);
+      const m = mats[r.materialIndex] || mats[0] || {}, hexs = m.color && m.color.getHexString ? m.color.getHexString() : "b8bdc7", key = hexs + "|" + (m.opacity == null ? 1 : m.opacity) + "|" + (m.map ? m.map.uuid : "");
       let g = groups.get(key); if (!g) { g = newGroup(key); const n = parseInt(hexs, 16); g.c = [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; if (m.transparent && m.opacity < 1) g.a = m.opacity; groups.set(key, g);
         const im = m.map && m.map.image; if (im && (im.width || im.naturalWidth)) { try { const cv = document.createElement("canvas"); cv.width = im.width || im.naturalWidth; cv.height = im.height || im.naturalHeight; cv.getContext("2d").drawImage(im, 0, 0);
           const b = await new Promise(ok => cv.toBlob(ok, "image/png")); g.t = await texFn({ name: "tex.png", buf: await b.arrayBuffer(), mime: "image/png" }); if (g.t) g.c = [1, 1, 1]; } catch (_) {} } }
       const I = all ? all.slice(r.start, r.start + r.count) : Array.from({ length: r.count }, (_, i) => r.start + i);
-      addTris(g, P, N, T, I, o.matrixWorld.elements, true);
+      addTris(g, P, N, T, I, o.matrixWorld.elements, true, CV, 3, true);
     }
   }
+  blobs.forEach(b => URL.revokeObjectURL(b));
   return [...groups.values()].filter(g => g.P.length);
 }
 
@@ -2052,7 +2431,7 @@ function packModel(name, groups){
   const mn = [1e30, 1e30, 1e30], mx = [-1e30, -1e30, -1e30];
   for (const g of groups) for (let i = 0; i < g.P.length; i += 3) for (let k = 0; k < 3; k++) { const v = g.P[i + k]; if (v < mn[k]) mn[k] = v; if (v > mx[k]) mx[k] = v; }
   const top = Math.max(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2], 1e-6), ext = [0, 1, 2].map(k => Math.max(mx[k] - mn[k], top * 0.004)), cen = [0, 1, 2].map(k => (mx[k] + mn[k]) / 2), k8 = 8 / top;   // flat models still get a little thickness
-  const map = new Map(), vb = [], idx = [], gs = [];
+  const map = new Map(), vb = [], idx = [], gs = []; let hasC = false;
   const q = (v, s) => Math.max(-s, Math.min(s, Math.round(v * s)));
   for (const g of groups) {
     const s0 = idx.length;
@@ -2060,22 +2439,23 @@ function packModel(name, groups){
       const px = Math.round(((g.P[i*3] - cen[0]) / ext[0] + 0.5) * 65535), py = Math.round(((g.P[i*3+1] - cen[1]) / ext[1] + 0.5) * 65535), pz = Math.round(((g.P[i*3+2] - cen[2]) / ext[2] + 0.5) * 65535);
       let nx = g.N[i*3] / ext[0], ny = g.N[i*3+1] / ext[1], nz = g.N[i*3+2] / ext[2]; const nl = Math.hypot(nx, ny, nz) || 1; nx = q(nx / nl, 127); ny = q(ny / nl, 127); nz = q(nz / nl, 127);
       const u = Math.max(-32767, Math.min(32767, Math.round(g.T[i*2] * 1024))), v = Math.max(-32767, Math.min(32767, Math.round(g.T[i*2+1] * 1024)));
-      const key = px + "," + py + "," + pz + "," + nx + "," + ny + "," + nz + "," + u + "," + v; let id = map.get(key);
-      if (id === undefined) { id = vb.length / 8; map.set(key, id); vb.push(px, py, pz, nx, ny, nz, u, v); }
+      const vcv = g.VC && g.VC[(i / 3) | 0] ? g.VC[(i / 3) | 0][i % 3] : null, cr = vcv ? Math.round(vcv[0] * 255) : 255, cg = vcv ? Math.round(vcv[1] * 255) : 255, cb = vcv ? Math.round(vcv[2] * 255) : 255; if (vcv) hasC = true;
+      const key = px + "," + py + "," + pz + "," + nx + "," + ny + "," + nz + "," + u + "," + v + "," + cr + "," + cg + "," + cb; let id = map.get(key);
+      if (id === undefined) { id = vb.length / 11; map.set(key, id); vb.push(px, py, pz, nx, ny, nz, u, v, cr, cg, cb); }
       idx.push(id);
     }
-    if (idx.length > s0) gs.push({ s: s0, n: idx.length - s0, c: g.c.map(v => Math.round(v * 255) / 255), a: g.a, t: g.t || null });
+    if (idx.length > s0) { let gc = g.c.map(v => (isFinite(v) ? v : 0.8)); if (g.t) gc = [1, 1, 1]; else if (Math.max(gc[0], gc[1], gc[2]) < 0.06 && !(g.VC && g.VC.some(Boolean))) gc = [0.8, 0.8, 0.8]; gs.push({ s: s0, n: idx.length - s0, c: gc.map(v => Math.round(v * 255) / 255), a: g.a == null || !isFinite(g.a) ? 1 : g.a, t: g.t || null }); }   // textured -> white (the picture gives the colour); no picture and a black colour (failed texture / Kd 0 0 0) -> light grey, never pure black
   }
-  const nv = vb.length / 8, vbuf = new ArrayBuffer(nv * 14), dv = new DataView(vbuf);
-  for (let i = 0; i < nv; i++) { const o = i * 14, s = i * 8; dv.setUint16(o, vb[s], true); dv.setUint16(o + 2, vb[s+1], true); dv.setUint16(o + 4, vb[s+2], true); dv.setInt8(o + 6, vb[s+3]); dv.setInt8(o + 7, vb[s+4]); dv.setInt8(o + 8, vb[s+5]); dv.setInt16(o + 10, vb[s+6], true); dv.setInt16(o + 12, vb[s+7], true); }
+  const nv = vb.length / 11, vbuf = new ArrayBuffer(nv * 14), dv = new DataView(vbuf), cbuf = hasC ? new Uint8Array(nv * 3) : null;
+  for (let i = 0; i < nv; i++) { const o = i * 14, s = i * 11; if (cbuf) { cbuf[i*3] = vb[s+8]; cbuf[i*3+1] = vb[s+9]; cbuf[i*3+2] = vb[s+10]; } dv.setUint16(o, vb[s], true); dv.setUint16(o + 2, vb[s+1], true); dv.setUint16(o + 4, vb[s+2], true); dv.setInt8(o + 6, vb[s+3]); dv.setInt8(o + 7, vb[s+4]); dv.setInt8(o + 8, vb[s+5]); dv.setInt16(o + 10, vb[s+6], true); dv.setInt16(o + 12, vb[s+7], true); }
   const w = nv <= 65535 ? 2 : 4, ibuf = w === 2 ? Uint16Array.from(idx).buffer : Uint32Array.from(idx).buffer;
-  return { model: { name, nv, w, v: bufB64(vbuf), i: bufB64(ibuf), g: gs, tris: idx.length / 3 }, size: ext.map(v => Math.round(v * k8 * 1000) / 1000) };
+  return { model: { name, nv, w, v: bufB64(vbuf), i: bufB64(ibuf), g: gs, tris: idx.length / 3, ...(cbuf ? { c: bufB64(cbuf.buffer) } : {}) }, size: ext.map(v => Math.round(v * k8 * 1000) / 1000) };
 }
 function modelData(id){
   let d = MD_CACHE.get(id); if (d) return d;
   const m = MODELS[id]; if (!m) return null;
   const vbuf = b64(m.v), dv = new DataView(vbuf), nv = m.nv, ib = b64(m.i), idx = m.w === 2 ? new Uint16Array(ib) : new Uint32Array(ib);
-  const pos = new Float32Array(nv * 3), nrm = new Float32Array(nv * 3), uv = new Float32Array(nv * 2);
+  const pos = new Float32Array(nv * 3), nrm = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), cb8 = m.c ? new Uint8Array(b64(m.c)) : null;
   for (let i = 0; i < nv; i++) {
     const o = i * 14; pos[i*3] = dv.getUint16(o, true) / 65535 - 0.5; pos[i*3+1] = dv.getUint16(o + 2, true) / 65535 - 0.5; pos[i*3+2] = dv.getUint16(o + 4, true) / 65535 - 0.5;
     const x = dv.getInt8(o + 6), y = dv.getInt8(o + 7), z = dv.getInt8(o + 8), l = Math.hypot(x, y, z) || 1; nrm[i*3] = x / l; nrm[i*3+1] = y / l; nrm[i*3+2] = z / l;
@@ -2083,22 +2463,23 @@ function modelData(id){
   }
   const mesh6 = new Float32Array(idx.length * 6);
   for (let k = 0; k < idx.length; k++) { const i = idx[k]; mesh6[k*6] = pos[i*3]; mesh6[k*6+1] = pos[i*3+1]; mesh6[k*6+2] = pos[i*3+2]; mesh6[k*6+3] = nrm[i*3]; mesh6[k*6+4] = nrm[i*3+1]; mesh6[k*6+5] = nrm[i*3+2]; }
-  d = { id, groups: m.g, mesh6, g8(gi){   // one material group as x y z nx ny nz u v triangles
-      const g = m.g[gi], out = new Float32Array(g.n * 8);
-      for (let k = 0; k < g.n; k++) { const i = idx[g.s + k], o = k * 8; out[o] = pos[i*3]; out[o+1] = pos[i*3+1]; out[o+2] = pos[i*3+2]; out[o+3] = nrm[i*3]; out[o+4] = nrm[i*3+1]; out[o+5] = nrm[i*3+2]; out[o+6] = uv[i*2]; out[o+7] = uv[i*2+1]; }
+  d = { id, groups: m.g, mesh6, hasC: !!cb8, g8(gi, withC){   // one material group as x y z nx ny nz u v (+ r g b when withC) triangles
+      const g = m.g[gi], F = withC && cb8 ? 11 : 8, out = new Float32Array(g.n * F);
+      for (let k = 0; k < g.n; k++) { const i = idx[g.s + k], o = k * F; out[o] = pos[i*3]; out[o+1] = pos[i*3+1]; out[o+2] = pos[i*3+2]; out[o+3] = nrm[i*3]; out[o+4] = nrm[i*3+1]; out[o+5] = nrm[i*3+2]; out[o+6] = uv[i*2]; out[o+7] = uv[i*2+1]; if (F === 11) { out[o+8] = cb8[i*3] / 255; out[o+9] = cb8[i*3+1] / 255; out[o+10] = cb8[i*3+2] / 255; } }
       return out; } };
   MD_CACHE.set(id, d); return d;
 }
 
 // ---------- entry point: files picked by the user -> [{ name, model, size }] ----------
 async function importModelFiles(list, texFn){
+  MISSING.clear(); for (const k in LONE) delete LONE[k];
   const entries = [];
   for (const f of list) {
     const buf = f.buf || await f.arrayBuffer();
     if (/\.(zip|kmz)$/i.test(f.name)) entries.push(...await unzip(buf)); else entries.push({ name: f.name, buf });
   }
-  const files = new Map(); for (const e of entries) files.set(baseName(e.name), e);
-  const res = [], kinds = ["glb", "gltf", "obj", "ply", "stl", "off", "dae", "3mf", "fbx", "3ds", "wrl", "vrml", "amf", "usdz"];
+  const files = new Map(); for (const e of entries) files.set(baseName(e.name), e); files._all = entries;
+  const res = [], kinds = ["glb", "gltf", "obj", "ply", "stl", "off", "dae", "3mf", "fbx", "3ds", "wrl", "vrml", "amf", "usdz", "x3d", "lwo", "vtk", "drc"];
   for (const e of entries) {
     const ext = (/\.([a-z0-9]+)$/i.exec(e.name) || [])[1]; const k = ext && ext.toLowerCase(); if (!kinds.includes(k)) continue;
     const nm = baseName(e.name).replace(/\.[a-z0-9]+$/, "") || "Model"; let groups;
@@ -2111,6 +2492,8 @@ async function importModelFiles(list, texFn){
     else if (k === "dae") groups = await parseDAE(new TextDecoder().decode(e.buf), files, texFn);
     else if (k === "3mf") groups = await parse3MF(e.buf);
     else groups = await parseViaThree(k, e.buf, files, texFn);
+    for (const g of groups) if ((k === "obj" || k === "ply") && g.VC && g.VC.some(Boolean)) g.c = [1, 1, 1];   // their vertex colours are the whole colour
+    if (!nativeVC()) for (const g of groups) await applyVC(g, texFn);
     const r = packModel(nm.slice(0, 40), groups); res.push({ name: nm.slice(0, 40), model: r.model, size: r.size });
   }
   if (!res.length) throw new Error("no model found: pick .obj (with its .mtl and pictures), .glb, .gltf, .fbx, .dae, .stl, .ply, .3mf, .off, .3ds, .wrl, .amf, .usdz or a .zip of them");
@@ -2120,32 +2503,41 @@ async function importModelFiles(list, texFn){
 // ---- Add > Model: pick the files, import, place in front of the camera ----
 let mdPar = "workspace";
 async function mdTex(f){   // a model's picture -> shrunk to the texture limit, kept by the app (short link) or inline
-  const mime = f.mime || (/\.jpe?g$/i.test(f.name) ? "image/jpeg" : /\.webp$/i.test(f.name) ? "image/webp" : "image/png"), url = URL.createObjectURL(new Blob([f.buf], { type: mime }));
+  const u8 = new Uint8Array(_ab(f.buf), 0, Math.min(12, _ab(f.buf).byteLength)), isPng = u8[0] === 0x89 && u8[1] === 0x50, isJpg = u8[0] === 0xFF && u8[1] === 0xD8, isWebp = u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42, isGif = u8[0] === 0x47 && u8[1] === 0x49;
+  const mime = isPng ? "image/png" : isJpg ? "image/jpeg" : isWebp ? "image/webp" : isGif ? "image/gif" : (f.mime || (/\.jpe?g$/i.test(f.name) ? "image/jpeg" : /\.webp$/i.test(f.name) ? "image/webp" : /\.bmp$/i.test(f.name) ? "image/bmp" : "image/png"));
+  let im = null, nw, nh, url = null;
+  try { im = await decodeSpecialImage(f); } catch (e) { throw new Error("picture " + f.name + ": " + (e.message || e)); }
+  if (im) { nw = im.width; nh = im.height; }
+  else {
+    url = URL.createObjectURL(new Blob([f.buf], { type: mime }));
+    im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("picture " + f.name + " can't be read (use png, jpg, webp, bmp, gif, tga, dds, psd or tif)")); i.src = url; }); nw = im.naturalWidth; nh = im.naturalHeight;
+  }
   try {
-    const im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("picture " + f.name + " can't be read (use png, jpg or webp)")); i.src = url; });
-    const k = Math.min(1, IMG_MAX / Math.max(im.naturalWidth, im.naturalHeight)), cv = document.createElement("canvas");
-    cv.width = Math.max(1, Math.round(im.naturalWidth * k)); cv.height = Math.max(1, Math.round(im.naturalHeight * k));
+    const k = Math.min(1, IMG_MAX / Math.max(nw, nh)), cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.round(nw * k)); cv.height = Math.max(1, Math.round(nh * k));
     cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
     const d = cv.toDataURL(mime === "image/jpeg" ? "image/jpeg" : "image/png", 0.92);
-    return NMEDIA ? NMEDIA.save(d) : d;
-  } finally { URL.revokeObjectURL(url); }
+    return (NMEDIA && NMEDIA.save(d)) || d;
+  } finally { if (url) URL.revokeObjectURL(url); }
 }
-async function importModels(files){   // picked files -> parts in front of the camera; true when something was imported
-  if (!files.length) return false;
+async function importModels(files, opt){   // picked files -> parts in front of the camera; true when something was imported
+  opt = opt || {}; if (!files.length) return false;
   const warn = [], cache = new Map(), busy = document.createElement("div");
   busy.style.cssText = "position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:50;background:#222;color:#fff;padding:8px 16px;border-radius:8px;font:14px system-ui,sans-serif"; busy.textContent = "Importing model…"; document.body.appendChild(busy);
   const texFn = async f => { if (cache.has(f.buf)) return cache.get(f.buf); let u = null; try { u = await mdTex(f); } catch (e) { warn.push(e.message || String(e)); } cache.set(f.buf, u); return u; };
-  let res; try { res = await importModelFiles(files, texFn); } catch (e) { busy.remove(); alert("Couldn't import the model: " + (e.message || e)); return false; }
-  busy.remove(); checkpoint(); const at = hitPoint(); let dx = 0;
+  let res; try { res = await importModelFiles(files, texFn); } catch (e) { busy.remove(); say("Couldn't import the model: " + (e.message || e)); return false; }
+  const miss = [...MISSING]; busy.remove(); checkpoint(); const at = opt.at || hitPoint(), par = opt.par || mdPar, made = []; let dx = 0;
+  if (opt.replace) { const rs = new Set(opt.replace); blocks = blocks.filter(b => !rs.has(b.model)); for (const id of rs) delete MODELS[id]; }
   for (const r of res) {
     let id; do id = "md" + Math.random().toString(36).slice(2, 8); while (MODELS[id]);
-    MODELS[id] = r.model;
+    MODELS[id] = r.model; made.push(id);
     const sz = r.size, nb = { name: r.name, pos: [at[0] + dx, at[1] + sz[1] / 2, at[2]], size: sz, color: "#ffffff", surface: "smooth", model: id };
-    if (mdPar !== "workspace") nb.par = mdPar;
+    if (par !== "workspace") nb.par = par;
     blocks.push(nb); sel = blocks.length - 1; dx += sz[0] + 2;
   }
-  selSvc = null; openSvc[mdPar] = true; saveB(); fill();
-  if (warn.length) alert("Imported, but some pictures could not be used:\n" + [...new Set(warn)].slice(0, 5).join("\n"));
+  selSvc = null; openSvc[par] = true; saveB(); fill();
+  if (warn.length) say("Imported, but some pictures could not be used: " + [...new Set(warn)].slice(0, 3).join("; "));
+  if (miss.length) missingBanner(miss, extra => importModels([...files, ...extra], { replace: made, at, par }));
   return true;
 }
 const modelsOut = () => { const o = {}; for (const b of blocks) if (b.model && MODELS[b.model]) o[b.model] = MODELS[b.model]; return o; };   // only the models this place uses are saved
@@ -2302,6 +2694,37 @@ function outline(b, col){
   for (const [i, j] of [[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]]) { const s = segS(cn[i], cn[j]); if (s) { g2.moveTo(s[0][0], s[0][1]); g2.lineTo(s[1][0], s[1][1]); } }
   g2.stroke();
 }
+const ghC = $("gh"), gh = ghC.getContext("2d");
+let hlHad = false;
+function drawHighlights(vp, eye){
+  const list = []; for (const h of blocks) { if (h.kind !== "highlight" || h.enabled === false || !h.par || !inWorld(h)) continue; const t = byId(h.par); if (t) list.push([h, t]); }
+  if (!list.length && !hlHad) return; hlHad = list.length > 0;
+  const dpr = Math.min(devicePixelRatio || 1, 2), w = Math.round(VW * dpr), hh = Math.round(VH * dpr);
+  if (ghC.width !== w || ghC.height !== hh) { ghC.width = w; ghC.height = hh; }
+  gh.setTransform(dpr, 0, 0, dpr, 0, 0); gh.clearRect(0, 0, VW, VH); if (!list.length) return;
+  const P = p => { const m = vp; return [m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12], m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13], m[3]*p[0]+m[7]*p[1]+m[11]*p[2]+m[15]]; };
+  const S = c => [(c[0]/c[2]*0.5 + 0.5) * VW, (1 - (c[1]/c[2]*0.5 + 0.5)) * VH], N = 0.2;
+  const rgba = (hex, a) => { const v = parseInt(String(hex).slice(1), 16) || 0; return `rgba(${v>>16&255},${v>>8&255},${v&255},${a})`; };
+  const FA = [[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]], ED = [[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]];
+  let occl = null;
+  const vis = q => { const dx = q[0]-eye[0], dy = q[1]-eye[1], dz = q[2]-eye[2], L = Math.hypot(dx, dy, dz); if (L < 1e-4) return true; const d = [dx/L, dy/L, dz/L];
+    for (const x of occl) { const t = rayOBB(eye, d, x); if (t !== null && t < L - 0.06) return false; } return true; };
+  const getOcc = () => occl || (occl = blocks.filter(x => x.size && x.pos && !x.kind && inWorld(x) && !(x.transp >= 1) && !x.negate));
+  for (const [h, t] of list) {
+    const fa = 1 - (h.hfillT != null ? h.hfillT : 0.5), oa = 1 - (h.houtT != null ? h.houtT : 0), fc = rgba(h.hfill || "#ff3b3b", fa), oc = rgba(h.hout || "#ffffff", oa);
+    const parts = t.kind ? blocks.filter(x => x !== t && isUnder(x, t) && !NOGEO(x) && x.kind !== "light" && x.kind !== "sound" && x.kind !== "prompt" && x.kind !== "camera" && x.size) : [t];
+    const occ = h.hdepth === "occ"; if (occ) getOcc();
+    for (const b of parts) {
+      if (!b.size || !b.pos) continue; const R = rotOf(b), hs = b.size.map(v => v/2), cn = [], cc = [];
+      for (let i = 0; i < 8; i++) { const l = [(i&1?1:-1)*hs[0], (i&2?1:-1)*hs[1], (i&4?1:-1)*hs[2]]; const q = [0,1,2].map(j => b.pos[j] + R[j][0]*l[0] + R[j][1]*l[1] + R[j][2]*l[2]); cn.push(q); cc.push(P(q)); }
+      if (fa > 0) { gh.fillStyle = fc; for (const f of FA) { if (f.some(i => cc[i][2] < N)) continue; if (occ) { const m = [0,1,2].map(j => (cn[f[0]][j]+cn[f[1]][j]+cn[f[2]][j]+cn[f[3]][j])/4), c0 = [0,1,2].map(j => (cn[0][j]+cn[7][j])/2); const nx = [0,1,2].map(j => m[j]-c0[j]); if (nx[0]*(eye[0]-m[0])+nx[1]*(eye[1]-m[1])+nx[2]*(eye[2]-m[2]) <= 0 || !vis(m.map((v, j) => v + nx[j]*0.001))) continue; } gh.beginPath(); f.forEach((i, k) => { const s2 = S(cc[i]); k ? gh.lineTo(s2[0], s2[1]) : gh.moveTo(s2[0], s2[1]); }); gh.closePath(); gh.fill(); } }
+      if (oa > 0) { gh.lineWidth = h.hw || 2; gh.lineCap = "round"; gh.strokeStyle = oc; gh.beginPath();
+        for (const [i, j] of ED) { let A = cc[i], B = cc[j]; if (A[2] < N && B[2] < N) continue; if (A[2] < N) A = lerp3(A, B, (N - A[2]) / (B[2] - A[2])); else if (B[2] < N) B = lerp3(B, A, (N - B[2]) / (A[2] - B[2])); if (!occ) { const a = S(A), bb = S(B); gh.moveTo(a[0], a[1]); gh.lineTo(bb[0], bb[1]); continue; }
+          const K = 12; let prev = null; for (let k = 0; k <= K; k++) { const u = k / K, q = lerp3(cn[i], cn[j], u), ok = vis(q) && cc[i][2] >= N && cc[j][2] >= N; const pt = ok ? S(lerp3(A, B, u)) : null; if (pt && prev) { gh.moveTo(prev[0], prev[1]); gh.lineTo(pt[0], pt[1]); } prev = pt; } }
+        gh.stroke(); }
+    }
+  }
+}
 let ovHad = false;
 function drawOverlay(){
   const need = msel.size > 0 || !!blocks[sel];
@@ -2413,12 +2836,14 @@ gz.addEventListener("pointermove", e => {
   }
   else if (eg.k === "body") {
     if (!eg.started && Math.hypot(e.clientX - eg.sx, e.clientY - eg.sy) > 7) { eg.started = true; checkpoint(); eg.orig = JSON.parse(JSON.stringify(blocks[sel])); eg.p0 = eg.orig.pos.slice(); eg.mo = [...msel].filter(i => i !== sel && blocks[i]).map(i => [i, blocks[i].pos.slice()]); }
-    if (eg.started) updateDrag(e.clientX, e.clientY);
+    if (eg.started) dragPend = [e.clientX, e.clientY];
   }
-  else if (eg.k === "gizmo") updateDrag(e.clientX, e.clientY);
+  else if (eg.k === "gizmo") dragPend = [e.clientX, e.clientY];
 });
+let dragPend = null;   // newest pointer spot of a drag: applied once per frame (editFrame), not once per mouse event
+function flushDrag(){ if (!dragPend) return; const d = dragPend; dragPend = null; if (eg) updateDrag(d[0], d[1]); }
 const edUp = e => {
-  if (!eds.has(e.pointerId)) return;
+  if (!eds.has(e.pointerId)) return; flushDrag();
   if (eg && eg.k === "look" && eg.moved < 6) { sel = -1; fill(); }
   if (eg && (eg.k === "gizmo" || (eg.k === "body" && eg.started))) saveB();
   eds.delete(e.pointerId); gizmoTip = ""; if (eds.size === 0 || (eg && eg.k === "pinch")) eg = null;
@@ -2449,9 +2874,9 @@ const ICO = {
   cylinder: '<path d="M3 4a5 2 0 0110 0v8a5 2 0 01-10 0z"/>', cone: '<path d="M8 1.5L14 12a6 2.2 0 01-12 0z"/>',
   pyramid: '<path d="M8 1.5l6.5 10.5L8 14.5 1.5 12z"/>', wedge: '<path d="M2 13V3l12 10z"/>', cornerwedge: '<path d="M2 13L8 3l6 10-6 2z"/>'
 };
-const ICOC = { post: '#ff7bd0', sscript: '#c58cff', remote: '#ffb45a', script: '#7fd6a6', union: '#7fb6ff', decal: '#ff9f5a', texture: '#c58cff', sound: '#6fb7ff', prompt: '#ffb45a', camera: '#8ec5ff', gui: '#6fd3c8', spawn: '#6fd36f', baseplate: '#b5b5b5', pointlight: '#f2d24a', spotlight: '#f2d24a' };
+const ICOC = { post: '#ff7bd0', sscript: '#c58cff', remote: '#ffb45a', script: '#7fd6a6', union: '#7fb6ff', decal: '#ff9f5a', texture: '#c58cff', sound: '#6fb7ff', prompt: '#ffb45a', camera: '#8ec5ff', gui: '#6fd3c8', spawn: '#6fd36f', baseplate: '#b5b5b5', highlight: '#ff6b6b', pointlight: '#f2d24a', spotlight: '#f2d24a' };
 const shIcon = sh => '<svg viewBox="0 0 16 16" fill="' + (ICOC[sh] || 'currentColor') + '">' + (ICO[sh] || ICO.block) + '</svg>';
-Object.assign(ICO, { pointlight: '<path d="M8 1a4.5 4.5 0 00-2.5 8.2V11h5V9.2A4.5 4.5 0 008 1z"/><rect x="5.5" y="12" width="5" height="1.6" fill="#c9c9c9"/><rect x="6.5" y="14" width="3" height="1.2" fill="#c9c9c9"/>', spotlight: '<path d="M8.5 7.6L0.6 9.8 6.3 15.4z" fill-opacity=".32"/><path d="M7.6 8.4L2.6 10.6M7.9 9.2L5.6 13.4" stroke="#fff" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".85"/><g transform="translate(11.2 4.8) rotate(225) scale(.55) translate(-8 -8)"><path d="M8 1a4.5 4.5 0 00-2.5 8.2V11h5V9.2A4.5 4.5 0 008 1z"/><rect x="5.5" y="12" width="5" height="1.6" fill="#c9c9c9"/><rect x="6.5" y="14" width="3" height="1.2" fill="#c9c9c9"/></g>' });
+Object.assign(ICO, { highlight: '<path d="M2 2h12v12H2z" fill-opacity=".3"/><path d="M2 2h12v12H2zM4 4h8v8H4z" fill-rule="evenodd"/>', pointlight: '<path d="M8 1a4.5 4.5 0 00-2.5 8.2V11h5V9.2A4.5 4.5 0 008 1z"/><rect x="5.5" y="12" width="5" height="1.6" fill="#c9c9c9"/><rect x="6.5" y="14" width="3" height="1.2" fill="#c9c9c9"/>', spotlight: '<path d="M8.5 7.6L0.6 9.8 6.3 15.4z" fill-opacity=".32"/><path d="M7.6 8.4L2.6 10.6M7.9 9.2L5.6 13.4" stroke="#fff" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".85"/><g transform="translate(11.2 4.8) rotate(225) scale(.55) translate(-8 -8)"><path d="M8 1a4.5 4.5 0 00-2.5 8.2V11h5V9.2A4.5 4.5 0 008 1z"/><rect x="5.5" y="12" width="5" height="1.6" fill="#c9c9c9"/><rect x="6.5" y="14" width="3" height="1.2" fill="#c9c9c9"/></g>' });
 ICO.post = '<path d="M7 1l1.6 4.4L13 7 8.6 8.6 7 13 5.4 8.6 1 7l4.4-1.6z"/><path d="M12.5 9.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'; ICO.prompt = '<path fill-rule="evenodd" d="M1.5 3h13v10h-13zM3 4.5v7h10v-7zM6 6h4v4H6z"/>'; ICO.union = '<path d="M2 3h8v3h4v7H6v-3H2z"/>'; ICO.decal = '<path d="M2 2h12v12H2z" fill="none" stroke="#ff9f5a" stroke-width="1.3"/><path d="M3.5 12l3-4 2 2.5 1.5-1.5 2.5 3z"/><circle cx="10.5" cy="5.5" r="1.3"/>'; ICO.texture = '<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" opacity=".9"/><path d="M7 7h2v2H7z" fill="#fff"/>'; ICO.sound = '<path d="M1 6h3l4-3.5v11L4 10H1z"/><path d="M10 5a4 4 0 010 6M12 3a7 7 0 010 10" stroke="#6fb7ff" stroke-width="1.3" fill="none"/>'; ICO.spawn = '<path d="M2 10h12v3H2z"/><path d="M8 1.5l3 4H9.2V9H6.8V5.5H5z"/>'; ICO.baseplate = '<path d="M1 9l7-4 7 4-7 4z"/>';
 ICO.remote = '<path d="M1 3h9V1l5 3.5L10 8V6H1z"/><path d="M15 10H6V8L1 11.5 6 15v-2h9z"/>'; ICO.sscript = '<path d="M3 1h7l3 3v11H3z"/><path d="M5 7h6M5 9.5h6M5 12h4" stroke="#1d1d20" stroke-width="1" fill="none"/>';
 ICO.script = '<path d="M3 1h7l3 3v11H3z"/><path d="M5 7h6M5 9.5h6M5 12h4" stroke="#1d1d20" stroke-width="1" fill="none"/>'; ICO.camera = '<rect x="1" y="4" width="10" height="8" rx="1"/><path d="M11 7l4-2v6l-4-2z"/>'; ICO.folder = ICO.group = '<path d="M1 3h5l1.5 2H15v8H1z"/>'; Object.assign(ICO, {
@@ -2463,10 +2888,11 @@ ICO.script = '<path d="M3 1h7l3 3v11H3z"/><path d="M5 7h6M5 9.5h6M5 12h4" stroke
   guibillboard: '<rect x="1.5" y="1.5" width="13" height="8.2" rx="1.3"/><rect x="3" y="3" width="10" height="5.2" rx=".5" fill="#1d1d20" fill-opacity=".55"/><path d="M4.8 5.1h3.4M4.8 6.9h5.6" stroke="#fff" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M8 9.7v4.2M5.4 14.3h5.2" stroke="#6fd3c8" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
 });
 ICO.guiimage = '<rect x="1" y="2" width="14" height="12" rx="1.6" fill-opacity=".3"/><rect x="1" y="2" width="14" height="12" rx="1.6" fill="none" stroke="#6fd3c8" stroke-width="1.2"/><circle cx="5.2" cy="5.8" r="1.4" fill="#fff"/><path d="M2.5 12.5l3.4-4 2.4 2.6 2-2.2 3.2 3.6z" fill="#fff"/>';
+ICO.guivideo = '<rect x="1" y="2" width="14" height="12" rx="1.6" fill-opacity=".3"/><rect x="1" y="2" width="14" height="12" rx="1.6" fill="none" stroke="#6fd3c8" stroke-width="1.2"/><path d="M6.2 5l5 3-5 3z" fill="#fff"/>';
 ICO.guiimagebutton = '<rect x="1" y="3.2" width="14" height="9" rx="2.5" fill="#000" fill-opacity=".35"/><rect x="1" y="2.4" width="14" height="8.6" rx="2.5"/><circle cx="4.8" cy="5.4" r="1.2" fill="#1d1d20"/><path d="M2.6 9.8l2.8-3.2 2 2.1 1.5-1.6 2.5 2.7z" fill="#1d1d20"/><path d="M10 7.2v6l1.6-1.4 1.1 2.4 1.2-.5-1.1-2.3h2.1z" fill="#fff" stroke="#1d1d20" stroke-width=".8" stroke-linejoin="round"/>';
-Object.assign(ICOC, { guiimage: "#6fd3c8", guiimagebutton: "#6fd3c8", folder: "#e0c060", group: "#e0c060", guiframe: "#6fd3c8", guilabel: "#6fd3c8", guibutton: "#6fd3c8", guisurface: "#6fd3c8", guibillboard: "#6fd3c8" });
-const objName = b => b.kind === "gui" ? GUIN[b.gt] || "Frame" : b.kind === "sscript" ? "ServerScript" : b.kind === "remote" ? "RemoteEvent" : b.kind === "post" ? "PostProcessing" : b.kind === "camera" ? "Camera" : b.kind === "script" ? "LocalScript" : b.model ? "Model" : b.mesh ? "Union" : b.kind === "decal" ? "Decal" : b.kind === "texture" ? "Texture" : b.kind === "prompt" ? "ProximityPrompt" : b.kind === "sound" ? "Sound" : b.kind === "folder" ? (b.group ? "Group" : "Folder") : b.kind === "light" ? (b.ltype === "spot" ? "SpotLight" : "PointLight") : SHAPE_NAME[b.shape || "block"];
-const objIcon = b => b.kind === "gui" ? ({ screen: "gui", frame: "guiframe", label: "guilabel", button: "guibutton", imagelabel: "guiimage", imagebutton: "guiimagebutton", surface: "guisurface", billboard: "guibillboard" }[b.gt] || "guiframe") : b.kind === "sscript" ? "sscript" : b.kind === "remote" ? "remote" : b.kind === "post" ? "post" : b.kind === "camera" ? "camera" : b.kind === "script" ? "script" : b.mesh || b.model ? "union" : b.kind === "decal" || b.kind === "texture" ? b.kind : b.kind === "prompt" ? "prompt" : b.kind === "sound" ? "sound" : b.special === "spawn" ? "spawn" : b.special === "baseplate" ? "baseplate" : b.kind === "light" ? (b.ltype === "spot" ? "spotlight" : "pointlight") : (b.shape || "block");
+Object.assign(ICOC, { guiimage: "#6fd3c8", guivideo: "#6fd3c8", guiimagebutton: "#6fd3c8", folder: "#e0c060", group: "#e0c060", guiframe: "#6fd3c8", guilabel: "#6fd3c8", guibutton: "#6fd3c8", guisurface: "#6fd3c8", guibillboard: "#6fd3c8" });
+const objName = b => b.kind === "gui" ? GUIN[b.gt] || "Frame" : b.kind === "sscript" ? "ServerScript" : b.kind === "remote" ? "RemoteEvent" : b.kind === "post" ? "PostProcessing" : b.kind === "highlight" ? "Highlight" : b.kind === "camera" ? "Camera" : b.kind === "script" ? "LocalScript" : b.model ? "Model" : b.mesh ? "Union" : b.kind === "decal" ? "Decal" : b.kind === "texture" ? "Texture" : b.kind === "prompt" ? "ProximityPrompt" : b.kind === "sound" ? "Sound" : b.kind === "folder" ? (b.group ? "Group" : "Folder") : b.kind === "light" ? (b.ltype === "spot" ? "SpotLight" : "PointLight") : SHAPE_NAME[b.shape || "block"];
+const objIcon = b => b.kind === "gui" ? ({ screen: "gui", frame: "guiframe", label: "guilabel", button: "guibutton", imagelabel: "guiimage", imagebutton: "guiimagebutton", video: "guivideo", surface: "guisurface", billboard: "guibillboard" }[b.gt] || "guiframe") : b.kind === "sscript" ? "sscript" : b.kind === "remote" ? "remote" : b.kind === "post" ? "post" : b.kind === "highlight" ? "highlight" : b.kind === "camera" ? "camera" : b.kind === "script" ? "script" : b.mesh || b.model ? "union" : b.kind === "decal" || b.kind === "texture" ? b.kind : b.kind === "prompt" ? "prompt" : b.kind === "sound" ? "sound" : b.special === "spawn" ? "spawn" : b.special === "baseplate" ? "baseplate" : b.kind === "light" ? (b.ltype === "spot" ? "spotlight" : "pointlight") : (b.shape || "block");
 const SVC = [["workspace", "Workspace"], ["lighting", "Lighting"], ["storage", "Storage"], ["gui", "StarterGui"], ["local", "ClientService"], ["server", "ServerService"]];
 const openSvc = { workspace: true, storage: true, gui: true, local: false, server: false, lighting: true };
 let selSvc = null;
@@ -2504,10 +2930,10 @@ function showAdd(btn, par){   // the same list everywhere: it never changes with
   const mi = (attr, ic, nm) => `<div class="mi" ${attr} data-par="${par}"><span class="ic">${shIcon(ic)}</span>${nm}</div>`, sec = t => `<div class="sec" style="margin:4px -4px">${t}</div>`;
   addm.innerHTML = Object.keys(SHAPE_NAME).map(k => mi(`data-shape="${k}"`, k, SHAPE_NAME[k])).join("")
     + sec("Lights") + mi('data-light="point"', "pointlight", "PointLight") + mi('data-light="spot"', "spotlight", "SpotLight")
-    + sec("Objects") + mi('data-folder="1"', "folder", "Folder") + mi('data-sound="1"', "sound", "Sound") + mi('data-prompt="1"', "prompt", "ProximityPrompt") + mi('data-img="decal"', "decal", "Decal") + mi('data-img="texture"', "texture", "Texture")
+    + sec("Objects") + mi('data-folder="1"', "folder", "Folder") + mi('data-hl="1"', "highlight", "Highlight") + mi('data-sound="1"', "sound", "Sound") + mi('data-prompt="1"', "prompt", "ProximityPrompt") + mi('data-img="decal"', "decal", "Decal") + mi('data-img="texture"', "texture", "Texture")
     + mi('data-obj="spawn"', "spawn", "SpawnLocation") + mi('data-obj="baseplate"', "baseplate", "Baseplate") + mi('data-obj="camera"', "camera", "Camera") + mi('data-obj="remote"', "remote", "RemoteEvent") + mi('data-obj="post"', "post", "PostProcessing")
     + sec("Interface") + mi('data-obj="gui-screen"', "gui", "ScreenGui") + mi('data-obj="gui-surface"', "guisurface", "SurfaceGui") + mi('data-obj="gui-billboard"', "guibillboard", "BillboardGui")
-    + mi('data-obj="gui-frame"', "guiframe", "Frame") + mi('data-obj="gui-label"', "guilabel", "TextLabel") + mi('data-obj="gui-button"', "guibutton", "TextButton") + mi('data-obj="gui-imagelabel"', "guiimage", "ImageLabel") + mi('data-obj="gui-imagebutton"', "guiimagebutton", "ImageButton")
+    + mi('data-obj="gui-frame"', "guiframe", "Frame") + mi('data-obj="gui-label"', "guilabel", "TextLabel") + mi('data-obj="gui-button"', "guibutton", "TextButton") + mi('data-obj="gui-imagelabel"', "guiimage", "ImageLabel") + mi('data-obj="gui-imagebutton"', "guiimagebutton", "ImageButton") + mi('data-obj="gui-video"', "guivideo", "VideoFrame")
     + sec("Scripts") + mi('data-script="1"', "script", "LocalScript") + mi('data-sscript="1"', "sscript", "ServerScript");
   addm.classList.add("on"); fitMenu(addm, btn.getBoundingClientRect());
 }
@@ -2516,7 +2942,7 @@ addEventListener("pointerdown", e => { if (!e.target.closest || !e.target.closes
 addm.addEventListener("click", e => { const m = e.target.closest(".mi"); if (!m) { hideAdd(); return; } hideAdd();
   { const np = m.dataset.par, pr = protoOf(m.dataset), s0 = blocks[sel], viaSel = pr && (pr.kind === "decal" || pr.kind === "texture") && s0 && !s0.kind;   // a Decal/Texture attaches to the selected part
     const er = pr && !viaSel ? placeErr(pr, np) : null; if (er) { showNo(er[0], er[1]); return; } }
-  openF[m.dataset.par] = true; if (m.dataset.img) addImg(m.dataset.img, m.dataset.par); else if (m.dataset.script) addScript(m.dataset.par); else if (m.dataset.sscript) addScript(m.dataset.par, true); else if (m.dataset.obj) addObject(m.dataset.obj, m.dataset.par); else if (m.dataset.sound) addSound(m.dataset.par); else if (m.dataset.prompt) addPrompt(m.dataset.par); else if (m.dataset.folder) addFolder(m.dataset.par); else if (m.dataset.light) addLight(m.dataset.light, m.dataset.par); else addShape(m.dataset.shape, m.dataset.par); });
+  openF[m.dataset.par] = true; if (m.dataset.img) addImg(m.dataset.img, m.dataset.par); else if (m.dataset.script) addScript(m.dataset.par); else if (m.dataset.sscript) addScript(m.dataset.par, true); else if (m.dataset.obj) addObject(m.dataset.obj, m.dataset.par); else if (m.dataset.sound) addSound(m.dataset.par); else if (m.dataset.prompt) addPrompt(m.dataset.par); else if (m.dataset.hl) addHighlight(m.dataset.par); else if (m.dataset.folder) addFolder(m.dataset.par); else if (m.dataset.light) addLight(m.dataset.light, m.dataset.par); else addShape(m.dataset.shape, m.dataset.par); });
 $("tree").addEventListener("click", e => {
   const pl = e.target.closest(".plus"); if (pl) { if (pl.dataset.plusp) showAdd(pl, ensureId(blocks[+pl.dataset.plusp])); else showAdd(pl, pl.dataset.plus); return; }
   const fa = e.target.closest("[data-fa]"); if (fa) { openF[fa.dataset.fa] = !openF[fa.dataset.fa]; renderTree(); return; }
@@ -2542,17 +2968,19 @@ function placeErr(x, np, r, where){
   if (k === "post") return bad;                                                                    // ...and PostProcessing only lives there
   if (k === "sscript" && (r === "local" || r === "gui")) return bad;                               // ServerScript: not in ClientService / StarterGui
   if (k === "script" && r === "server") return bad;                                                // LocalScript: not in ServerService
-  const world = !k || k === "light" || k === "prompt" || k === "camera" || (k === "gui" && (x.gt === "surface" || x.gt === "billboard"));
+  const world = !k || k === "highlight" || k === "light" || k === "prompt" || k === "camera" || (k === "gui" && (x.gt === "surface" || x.gt === "billboard"));
   if (world && r !== "workspace") return bad;                                                      // parts, lights, prompts, cameras, SurfaceGui, BillboardGui: Workspace only
+  if (k === "highlight" && !(P && (!P.kind || P.kind === "folder"))) return bad;                  // Highlight sits on a Part / Model / Folder
   if ((k === "decal" || k === "texture") && !(P && !P.kind)) return bad;                           // Decal / Texture sit on a Part
   if (k === "gui" && x.gt === "surface" && !(P && !P.kind)) return bad;                            // SurfaceGui sits on a Part
   if (k === "gui" && x.gt === "screen" && r !== "gui") return bad;                                 // ScreenGui: StarterGui only
-  if (k === "gui" && (x.gt === "frame" || x.gt === "label" || x.gt === "button" || x.gt === "imagelabel" || x.gt === "imagebutton") && !(P && isGuiC(P))) return bad;   // Frame / TextLabel / TextButton / ImageLabel / ImageButton sit in a GUI container
+  if (k === "gui" && (x.gt === "frame" || x.gt === "label" || x.gt === "button" || x.gt === "imagelabel" || x.gt === "imagebutton" || x.gt === "video") && !(P && isGuiC(P))) return bad;   // Frame / TextLabel / TextButton / ImageLabel / ImageButton / VideoFrame sit in a GUI container
   return null;
 }
 function protoOf(d){   // what an Add-menu item would create
   if (d.shape) return { name: SHAPE_NAME[d.shape] };
   if (d.light) return { kind: "light", name: d.light === "spot" ? "SpotLight" : "PointLight" };
+  if (d.hl) return { kind: "highlight", name: "Highlight" };
   if (d.folder) return { kind: "folder", name: "Folder" };
   if (d.sound) return { kind: "sound", name: "Sound" };
   if (d.prompt) return { kind: "prompt", name: "ProximityPrompt" };
@@ -2693,13 +3121,17 @@ function fill0(live){
   if (sel < 0) msel.clear(); else if (!msel.has(sel)) { msel.clear(); msel.add(sel); }
   if (sel >= 0) selSvc = null;
   const has = sel >= 0 && blocks[sel], isL = !!(has && blocks[sel].kind === "light"), isS = !!(has && blocks[sel].kind === "sound"), isI = !!(has && (blocks[sel].kind === "decal" || blocks[sel].kind === "texture")), isSc = !!(has && isScr(blocks[sel])), isCam = !!(has && blocks[sel].kind === "camera"), isRem = !!(has && blocks[sel].kind === "remote"), isGui = !!(has && blocks[sel].kind === "gui"), pr = $("props");
-  const svp = !has && (selSvc === "server" || selSvc === "camera"); pr.classList.toggle("svcp", svp); pr.classList.toggle("isfolder", !!(has && blocks[sel].kind === "folder")); pr.classList.toggle("none", !has && selSvc !== "lighting" && !svp); pr.classList.toggle("lighting", !has && selSvc === "lighting"); pr.classList.toggle("islight", isL); pr.classList.toggle("issound", isS); pr.classList.toggle("isimg", isI); pr.classList.toggle("isscript", isSc); pr.classList.toggle("iscam", isCam); pr.classList.toggle("isremote", isRem); pr.classList.toggle("ispost", !!(has && blocks[sel].kind === "post")); if (has && blocks[sel].kind === "post") fillPost(blocks[sel]); pr.classList.toggle("isgui", isGui); pr.classList.toggle("isprompt", !!(has && blocks[sel].kind === "prompt")); pr.classList.toggle("isspawn", !!(has && blocks[sel].special === "spawn")); if (!isSc) closeSc(); else syncScTitle();
+  const svp = !has && (selSvc === "server" || selSvc === "camera"); pr.classList.toggle("svcp", svp); pr.classList.toggle("isfolder", !!(has && blocks[sel].kind === "folder")); pr.classList.toggle("none", !has && selSvc !== "lighting" && !svp); pr.classList.toggle("lighting", !has && selSvc === "lighting"); pr.classList.toggle("islight", isL); pr.classList.toggle("ishl", !!(has && blocks[sel].kind === "highlight")); pr.classList.toggle("issound", isS); pr.classList.toggle("isimg", isI); pr.classList.toggle("isscript", isSc); pr.classList.toggle("iscam", isCam); pr.classList.toggle("isremote", isRem); pr.classList.toggle("ispost", !!(has && blocks[sel].kind === "post")); if (has && blocks[sel].kind === "post") fillPost(blocks[sel]); pr.classList.toggle("isgui", isGui); pr.classList.toggle("isprompt", !!(has && blocks[sel].kind === "prompt")); pr.classList.toggle("isspawn", !!(has && blocks[sel].special === "spawn")); if (!isSc) closeSc(); else syncScTitle();
   if (has) {
     const b = blocks[sel], v = [...b.pos, ...b.size, ...(b.rot || [0,0,0])];
     ["x","y","z","w","h","d","rx","ry","rz"].forEach((k, i) => { if (document.activeElement !== FL[k]) FL[k].value = Math.round(v[i] * 1000) / 1000; });
     if (document.activeElement !== $("nm")) $("nm").value = b.name || "";
     $("lck").checked = !!b.locked; $("nm").placeholder = objName(b); $("shape").value = b.shape || "block"; if (!live) { const ex = descIds(sel); $("par").innerHTML = parOptions(ex); } { const pv = b.par || "workspace"; const par = $("par"); par.value = pv; if (par.value !== pv) par.selectedIndex = 0; }
-    if (isL) {
+    if (b.kind === "highlight") {
+      const ed = id => document.activeElement === $(id);
+      $("hlEn").checked = b.enabled !== false; $("hlF").value = /^#[0-9a-f]{6}$/i.test(b.hfill) ? b.hfill : "#ff3b3b"; $("hlO").value = /^#[0-9a-f]{6}$/i.test(b.hout) ? b.hout : "#ffffff";
+      if (!ed("hlFT")) $("hlFT").value = b.hfillT != null ? b.hfillT : 0.5; if (!ed("hlOT")) $("hlOT").value = b.houtT != null ? b.houtT : 0; if (!ed("hlW")) $("hlW").value = b.hw || 2; $("hlD").value = b.hdepth === "occ" ? "occ" : "top";
+    } else if (isL) {
       $("len").checked = b.enabled !== false;
       if (document.activeElement !== $("lbr")) $("lbr").value = b.lbright != null ? b.lbright : 1;
       if (document.activeElement !== $("lrg")) $("lrg").value = b.lrange || 16;
@@ -2711,6 +3143,8 @@ function fill0(live){
       const ed = id => document.activeElement === $(id), tx = b.gt === "label" || b.gt === "button", sc = b.gt === "screen", d3 = is3D(b), bb = b.gt === "billboard";
       $("guSec").textContent = GUIN[b.gt] || "GUI"; $("guVL").textContent = sc || d3 ? "Enabled" : "Visible"; $("guVi").checked = b.gvis !== false;
       document.querySelectorAll("#props .guT").forEach(r => { r.style.display = tx ? "" : "none"; }); document.querySelectorAll("#props .guG").forEach(r => { r.style.display = sc || d3 ? "none" : ""; }); document.querySelectorAll("#props .guI").forEach(r => { r.style.display = isImg(b) ? "" : "none"; }); if (isImg(b) && !ed("guIm")) $("guIm").value = (b.gimg || "").startsWith("data:") ? "(uploaded file)" : (b.gimg || "");
+      document.querySelectorAll("#props .guV").forEach(r => { r.style.display = isVid(b) ? "" : "none"; });
+      if (isVid(b)) { if (!ed("guVd")) $("guVd").value = (b.gvid || "").startsWith("data:") ? "(uploaded file)" : (b.gvid || ""); $("guVp").checked = b.gplaying !== false; $("guVl").checked = !!b.gloop; if (!ed("guVo")) $("guVo").value = b.gvol != null ? b.gvol : 0.5; if (!ed("guVs")) $("guVs").value = b.gspd || 1; $("guVf").value = b.gfit === "fill" || b.gfit === "cover" ? b.gfit : "contain"; }
       document.querySelectorAll("#props .guS").forEach(r => { r.style.display = b.gt === "surface" ? "" : "none"; }); document.querySelectorAll("#props .guP").forEach(r => { r.style.display = d3 ? "" : "none"; }); document.querySelectorAll("#props .guB").forEach(r => { r.style.display = bb ? "" : "none"; });
       if (d3) { $("guFc").value = String(b.gface != null ? b.gface : 2); if (!ed("guPp")) $("guPp").value = b.gpp || 50; if (bb) { if (!ed("guBw")) $("guBw").value = b.gbw || 6; if (!ed("guBh")) $("guBh").value = b.gbh || 2; for (const [id, k] of [["guOx", 0], ["guOy", 1], ["guOz", 2]]) if (!ed(id)) $(id).value = Math.round((b.pos[k] || 0) * 100) / 100; $("guTop").checked = !!b.gtop; } }
       if (!ed("guTx")) $("guTx").value = b.gtx || ""; if (!ed("guTs")) $("guTs").value = b.gts || 24; $("guTc").value = /^#[0-9a-f]{6}$/i.test(b.gtc) ? b.gtc : "#ffffff"; $("guBg").value = /^#[0-9a-f]{6}$/i.test(b.gbg) ? b.gbg : "#2b2f38";
@@ -2783,16 +3217,19 @@ $("cast").onchange = e => { const b = cur1(); if (!b) return; checkpoint(); if (
 for (const [id, i] of FACES) $(id).onchange = e => { const b = cur1(); if (!b) return; checkpoint(); const a = surfArr(b); a[i] = e.target.value; b.surface = lastSurf = a.every(q => q === a[0]) ? a[0] : a; saveB(); fill(); };
 $("sAll").onchange = e => { const b = cur1(); if (!b || !e.target.value) return; checkpoint(); b.surface = lastSurf = e.target.value; saveB(); fill(); };
 // image (decal / texture) + sound properties
-const PR = [["imU","imgUrl","s"],["imF","imgFace","n"],["imS","imgTile","n"],["imA","imgA","n"],["sU","sUrl","s"],["sV","sVol","n"],["sP","sPitch","n"],["sR","sRange","n"],["sLoop","sLoop","c"],["sAuto","sAuto","c"],["s3d","s3d","c"],["ppAct","ppAct","s"],["ppObj","ppObj","s"],["ppHold","ppHold","n"],["ppDist","ppDist","n"],["ppKey","ppKey","s"]];
+const PR = [["imU","imgUrl","s"],["imF","imgFace","n"],["imS","imgTile","n"],["imA","imgA","n"],["sU","sUrl","s"],["sV","sVol","n"],["sP","sPitch","n"],["sR","sRange","n"],["sLoop","sLoop","c"],["sAuto","sAuto","c"],["s3d","s3d","c"],["ppAct","ppAct","s"],["ppObj","ppObj","s"],["ppHold","ppHold","n"],["ppDist","ppDist","n"],["ppKey","ppKey","s"],["hlEn","enabled","c"],["hlF","hfill","s"],["hlO","hout","s"],["hlFT","hfillT","n"],["hlOT","houtT","n"],["hlW","hw","n"],["hlD","hdepth","s"]];
 for (const [id, k, t] of PR) { const el = $(id), pick = el.tagName === "SELECT" || t === "c";
   el.addEventListener("focus", checkpoint); for (const ev of ["keydown", "keyup", "keypress"]) el.addEventListener(ev, e => e.stopPropagation());
   el.addEventListener(pick ? "change" : "input", () => { const b = cur1(); if (!b) return; if (pick) checkpoint(); if (el.value === "(uploaded file)") return; const v = t === "c" ? el.checked : t === "n" ? parseFloat(el.value) : el.value; if (t === "n" && !isFinite(v)) return; b[k] = v; saveB(); }); }
 function readFile(f, kind, done){ if (!f) return;
   if (kind === "image") { const im = new Image(); im.onload = () => { const k = Math.min(1, IMG_MAX / Math.max(im.width, im.height)), c2 = document.createElement("canvas"); c2.width = Math.max(1, im.width * k | 0); c2.height = Math.max(1, im.height * k | 0); c2.getContext("2d").drawImage(im, 0, 0, c2.width, c2.height); { const d = c2.toDataURL("image/png"); done(NMEDIA ? NMEDIA.save(d) : d); } }; im.src = URL.createObjectURL(f); }
+  else if (kind === "video") { if (f.size > VIDEO_MAX) { alert("That video is over " + (VIDEO_MAX / 1e6) + " MB. " + (NMEDIA ? "Paste a link instead." : "Paste a link instead (the browser can only keep small videos).")); return; } const r = new FileReader(); r.onload = () => done(NMEDIA ? NMEDIA.save(r.result) : r.result); r.readAsDataURL(f); }
   else { if (f.size > AUDIO_MAX) { alert("That audio file is over " + (AUDIO_MAX / 1e6) + " MB. Paste a link instead."); return; } const r = new FileReader(); r.onload = () => done(NMEDIA ? NMEDIA.save(r.result) : r.result); r.readAsDataURL(f); } }
 $("imFile").onchange = e => readFile(e.target.files[0], "image", u => { const b = cur1(); if (!b) return; checkpoint(); b.imgUrl = u; saveB(); fill(); e.target.value = ""; });
 $("imPick").onclick = () => $("imFile").click();
 $("guImPick").onclick = () => $("guImFile").click();
+$("guVdPick").onclick = () => $("guVdFile").click();
+$("guVdFile").onchange = e => readFile(e.target.files[0], "video", u => { const b = cur1(); if (!b || !isVid(b)) return; checkpoint(); b.gvid = u; saveB(); fill(); e.target.value = ""; });
 $("guImFile").onchange = e => readFile(e.target.files[0], "image", u => { const b = cur1(); if (!b || !isImg(b)) return; checkpoint(); b.gimg = u; saveB(); fill(); e.target.value = ""; });
 $("sFile").onchange = e => readFile(e.target.files[0], "audio", u => { const b = cur1(); if (!b) return; checkpoint(); b.sUrl = u; saveB(); fill(); e.target.value = ""; });
 let prevA = null; $("sPrev").onclick = () => { if (prevA) { prevA.pause(); prevA = null; $("sPrev").textContent = "Preview"; return; } const b = cur1(); if (!b || !b.sUrl) return; prevA = new Audio(b.sUrl); prevA.volume = Math.min(1, b.sVol != null ? b.sVol : 1); prevA.playbackRate = b.sPitch || 1; prevA.onended = () => { prevA = null; $("sPrev").textContent = "Preview"; }; prevA.play().catch(() => {}); $("sPrev").textContent = "Stop"; };
@@ -2810,6 +3247,8 @@ $("cmFov").oninput = e => { const b = cur1(), v = parseFloat(e.target.value); if
 { const G = (id, fn, ev) => { $(id)[ev || "oninput"] = e => { const b = cur1(); if (!b || b.kind !== "gui") return; if (ev) checkpoint(); fn(b, e.target); saveB(); }; }, nm = (v, lo, hi) => Math.max(lo, Math.min(hi, isFinite(parseFloat(v)) ? parseFloat(v) : lo));
   G("guVi", (b, t) => { if (t.checked) delete b.gvis; else b.gvis = false; }, "onchange"); G("guTx", (b, t) => { b.gtx = String(t.value).slice(0, 500); }); G("guTs", (b, t) => { b.gts = nm(t.value, 6, 200); });
   G("guTc", (b, t) => { b.gtc = t.value; }); G("guIm", (b, t) => { if (t.value !== "(uploaded file)") b.gimg = String(t.value).trim().slice(0, 4000); }); G("guBg", (b, t) => { b.gbg = t.value; }); G("guBt", (b, t) => { b.gbt = nm(t.value, 0, 1); });
+  G("guVd", (b, t) => { if (t.value !== "(uploaded file)") b.gvid = String(t.value).trim().slice(0, 4000); }); G("guVp", (b, t) => { b.gplaying = !!t.checked; }, "onchange"); G("guVl", (b, t) => { b.gloop = !!t.checked; }, "onchange");
+  G("guVo", (b, t) => { b.gvol = nm(t.value, 0, 1); }); G("guVs", (b, t) => { b.gspd = nm(t.value, 0.25, 4); }); G("guVf", (b, t) => { b.gfit = t.value; }, "onchange");
   G("guFc", (b, t) => { b.gface = nm(t.value, 0, 5) | 0; }, "onchange"); G("guPp", (b, t) => { b.gpp = nm(t.value, 5, 500); }); G("guBw", (b, t) => { b.gbw = nm(t.value, 0.2, 500); }); G("guBh", (b, t) => { b.gbh = nm(t.value, 0.2, 500); });
   G("guOx", (b, t) => { b.pos[0] = nm(t.value, -1e5, 1e5); }); G("guOy", (b, t) => { b.pos[1] = nm(t.value, -1e5, 1e5); }); G("guOz", (b, t) => { b.pos[2] = nm(t.value, -1e5, 1e5); }); G("guTop", (b, t) => { if (t.checked) b.gtop = true; else delete b.gtop; }, "onchange");
   G("guX", (b, t) => { b.gx = nm(t.value, -1000, 1000); }); G("guY", (b, t) => { b.gy = nm(t.value, -1000, 1000); }); G("guW", (b, t) => { b.gw = nm(t.value, 0, 1000); }); G("guH", (b, t) => { b.gh = nm(t.value, 0, 1000); }); }
@@ -2857,6 +3296,7 @@ Object.assign(NR, (() => {
   const B = window.RCBridge, can = !!(NATIVE && B && B.rStart), NAMES = ["block", "ball", "cylinder", "cone", "pyramid", "wedge", "cornerwedge", "frustum"];
   const PS = 33;   // floats per part: mesh, model(16), colour(3), alpha, glow, 6 face surfaces, then the Decal/Texture: image id (-1 none), mode (1 decal, 2 tiled), face, tile, alpha
   let sent = false, sig = 0, fxSig = "", buf = new Float32Array(PS * 512), lights = new Float32Array(56);
+  let pBuf = new Float32Array(PS * 512), pLights = new Float32Array(56), pN = -1, pNL = -1;   // what the native renderer already has, to send only the difference
   const toB64 = f => { const u = new Uint8Array(f.buffer, f.byteOffset, f.byteLength); let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
   const TEXS = [["studAO", "Texture/Studs.png"], ["studN", "Normal/StudsN.png"], ["inletAO", "Texture/Inlets.png"], ["inletN", "Normal/InletsN.png"], ["weldT", "Normal/WeldN.png"], ["univT", "Normal/UniversalN.png"]];
   let texSent = false;
@@ -2869,7 +3309,7 @@ Object.assign(NR, (() => {
   const mdIds = new Map();
   function modelMeshId(id, gi, md){   // one uv mesh per material group of an imported model (x y z nx ny nz u v), sent once
     const k = id + "#" + gi; let m = mdIds.get(k); if (m == null) { m = meshN++; mdIds.set(k, m); }
-    if (!meshSent.has(m)) { meshSent.add(m); try { B.rMeshT(m, toB64(md.g8(gi))); } catch (e) { console.warn("model -> native failed", e); } }
+    if (!meshSent.has(m)) { meshSent.add(m); try { if (md.hasC && typeof B.rMeshC === "function") B.rMeshC(m, toB64(md.g8(gi, true))); else B.rMeshT(m, toB64(md.g8(gi, false))); } catch (e) { console.warn("model -> native failed", e); } }
     return m;
   }
   function imgId(url){   // Decal / Texture pictures go to the native renderer once each (png), the part list only carries their number
@@ -2987,7 +3427,24 @@ Object.assign(NR, (() => {
       if (!sent) sendMeshes(); sendTextures();
       if (!faceSent && faceB64) { faceSent = true; try { B.rFace(faceB64); } catch (_) { faceSent = false; } }
       const r = build(eye);
-      if (r.h !== sig) { sig = r.h; B.rScene(toB64(buf.subarray(0, r.n * PS)), r.n, toB64(lights.subarray(0, r.nl * 7)), r.nl); }
+      if (r.h !== sig) { sig = r.h;
+        // while dragging only a few parts change: send just those (no base64 of the whole map every frame, so the picture keeps up with the outline)
+        let done = false;
+        if (B.rPatch && pN === r.n && pNL === r.nl && r.n > 0) {
+          let same = true; for (let i = 0, e = r.nl * 7; i < e; i++) if (lights[i] !== pLights[i]) { same = false; break; }
+          if (same) {
+            const idx = [], lim = Math.max(8, r.n >> 3);
+            for (let i = 0; i < r.n && idx.length <= lim; i++) { const o = i * PS; for (let j = 0; j < PS; j++) if (buf[o + j] !== pBuf[o + j]) { idx.push(i); break; } }
+            if (idx.length && idx.length <= lim) {
+              const pk = new Float32Array(idx.length * PS); idx.forEach((pi, k) => pk.set(buf.subarray(pi * PS, pi * PS + PS), k * PS));
+              try { B.rPatch(idx.join(","), toB64(pk)); done = true; } catch (_) {}
+            } else if (!idx.length) done = true;
+          }
+        }
+        if (!done) B.rScene(toB64(buf.subarray(0, r.n * PS)), r.n, toB64(lights.subarray(0, r.nl * 7)), r.nl);
+        if (pBuf.length < r.n * PS) pBuf = new Float32Array(buf.length);
+        pBuf.set(buf.subarray(0, r.n * PS)); pLights.set(lights.subarray(0, r.nl * 7)); pN = r.n; pNL = r.nl;
+      }
       B.rFrame(frameData(vp, eye).join(","));
     }
   };
@@ -3322,6 +3779,12 @@ function addLight(type, par){
   const nb = { kind: "light", ltype: type, pos: [x, y + 4, z], size: [1, 1, 1], color: "#ffd27a", lcol: "#ffd27a", lbright: 1.5, lrange: type === "spot" ? 40 : 24 };
   if (type === "spot") nb.langle = 60; if (par !== "workspace") nb.par = par; { const pt = attachedTo(nb); if (pt) nb.pos = [0, (pt.size ? pt.size[1] / 2 : 0) + 1, 0]; }
   blocks.push(nb); sel = blocks.length - 1; selSvc = null; openSvc[par] = true; saveB(); fill();
+}
+function addHighlight(par){
+  checkpoint(); let p = (par && par !== "workspace") ? byId(par) : null; if (!p && sel >= 0 && blocks[sel] && (!blocks[sel].kind || blocks[sel].kind === "folder")) p = blocks[sel];
+  const nb = { kind: "highlight", name: "Highlight", pos: [0, 0, 0], size: [1, 1, 1], color: "#ff6b6b", hfill: "#ff3b3b", hfillT: 0.5, hout: "#ffffff", houtT: 0, hw: 2 };
+  if (p) { nb.par = ensureId(p); openF[p.id] = true; } else if (par && par !== "workspace") nb.par = par;
+  blocks.push(nb); sel = blocks.length - 1; selSvc = null; if (par) openSvc[par] = true; saveB(); fill();
 }
 function addBlock(){ addShape("block", "workspace"); }
 function hitPoint(){   // the spot in the middle of the view (same rule as new parts)
@@ -3750,6 +4213,7 @@ addEventListener("keyup", e => { if (!RT || !e.code) return; const k = keyNm(e);
 
 // ---- the editor frame: free camera + the same sun / shadow / surface rendering as play ----
 function editFrame(now, dt){
+  flushDrag();
   FOV = Math.max(20, Math.min(120, CAMS.fov)) * Math.PI / 180;   // (play may have used a Camera object's own field of view)
   curState = curHover && curHover.closest && curHover.closest("button,select,.row,.mi,.rs,.dd") ? "point" : "arrow";
   curEl.dataset.s = curState; { const hs = CURSORS[curState].hot; curEl.style.transform = `translate(${curX - hs[0]}px,${curY - hs[1]}px)`; }
@@ -3769,7 +4233,7 @@ function editFrame(now, dt){
   mkIdMap();
   const asp = c.width / c.height, b = basis(eye, tgt), vpm = mul(persp(FOV, asp, 0.5, 300000), lookAt(eye, tgt));
   EV = { eye, f: f0, rgt: b.x, up: b.y, asp, T: Math.tan(FOV/2), vp: vpm }; if (NR.on) NR.cam(vpm, eye);
-  drawOverlay();
+  drawOverlay(); try { drawHighlights(vpm, eye); } catch (e) { console.warn(e); }
 }
 function rayHitBlocks(o, d){ let t = null; for (const b of blocks) { if (b.kind === "light" || b.kind === "sound" || b.kind === "prompt" || b.kind === "camera" || NOGEO(b)) continue; const h = rayOBB(o, d, b); if (h !== null && (t === null || h < t)) t = h; } return t; }
 document.body.classList.add("edit"); fill(); btns();
@@ -4032,7 +4496,7 @@ addEventListener("keydown", e => {
   const t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
   e.preventDefault(); fpsOn = !fpsOn; $("fpsb").classList.toggle("on", fpsOn); fpsN = 0; fpsT = 0;
 });
-function frame(now){ scaleTick(now); if (RES_LOCK && playing) RES = resFor(true);
+function frame(now){ drainMouse(); scaleTick(now); if (RES_LOCK && playing) RES = resFor(true);
   try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; }
   if (fpsOn) { if (!fpsT) fpsT = now; fpsN++; if (now - fpsT >= 500) { const ms = (now - fpsT) / fpsN; $("fpsb").textContent = Math.round(1000 / ms) + " FPS  \u00b7  " + ms.toFixed(1) + " ms"; fpsN = 0; fpsT = now; } } }
 function frame0(now){
@@ -4181,6 +4645,7 @@ function frame0(now){
     mp("legP",  0.5, 2, -(swing + idleA * 0.5) + legJ + dLegP, 2);
     mp("legM", -0.5, 2,  (swing + idleA * 0.5) - legJ + dLegM, 2);
   }
+  try { drawHighlights(vpm, eye); } catch (e) { console.warn(e); }
   try { drawPeers(2); nameFrame(vpm, px, py, pz); bubFrame(now, vpm, px, py, pz); } catch (e) { console.warn(e); }
   netT += dt; if (netT >= 0.033) { netT = 0; netSend([px, py, pz, q.x, q.y, q.z, q.w, swing, idleA, jumpA, headA + dHead, legJ, dArmP, dArmM, dLegP, dLegM, state === "dead" ? 1 : 0]); }
 
