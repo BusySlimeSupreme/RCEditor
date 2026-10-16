@@ -18,6 +18,7 @@ body.edit.curlive:has(dialog[open]) #cur{display:none!important}
 #cur>g{display:none}
 #cur[data-s=arrow]>.ic-arrow,#cur[data-s=point]>.ic-point,#cur[data-s=open]>.ic-open,#cur[data-s=closed]>.ic-closed{display:inline}
 body.looking #cur{display:none!important}
+body.ncur #cur{display:none!important}   /* apk: the cursor is drawn by Kotlin */
 #coreui{position:fixed;inset:0;z-index:3;pointer-events:none}
 #coreui>*{pointer-events:auto}
 #base{position:fixed;left:0;top:0;width:120px;height:120px;border-radius:50%;border:6px solid #fff;box-sizing:border-box;background-size:100% 100%}
@@ -569,7 +570,8 @@ const R6_FACE = ASSET + "Texture/Face.png";
 const c = document.getElementById("c");
 // running inside the Android apk? (the apk injects window.RC_NATIVE before this script runs)
 const NATIVE = window.RC_NATIVE || null;
-var NR = { on: false };   // native renderer (apk): Kotlin draws the whole 3D view; the html only keeps the scene data and sends it
+var NR = { on: false };
+var sceneVer = 0, OVD = Math.min(window.devicePixelRatio || 1, 1.5);   // sceneVer: bumped by every edit; OVD: overlay canvas density (the thin gizmo lines do not need 2x)   // native renderer (apk): Kotlin draws the whole 3D view; the html only keeps the scene data and sends it
 let playing = false, edBot = 0;
 
 // ---------- physics (Rapier) ----------
@@ -1155,7 +1157,21 @@ addEventListener("pointermove", e => {
   moveT = performance.now(); pushX = dx; pushY = dy; mpX += dx; mpY += dy;   // applied once per frame in drainMouse()
 });
 const hudEl = document.getElementById("hud"), curEl = document.getElementById("cur");
-let curX = 0, curY = 0, curHand = false, curState = "arrow";
+let curX = 0, curY = 0, curHand = false, curState = "arrow", curTf = "", pvK = "";
+// apk: Kotlin draws and moves the mouse cursor; the page only tells it the shape and whether it should be shown (old apks without it keep the page cursor)
+const NCUR = (() => { try { return !!(window.RCBridge && RCBridge.cursorSet && RCBridge.cursorShow); } catch (_) { return false; } })();
+let ncS = "", ncV = null;
+function syncNCur(){
+  if (!NCUR) return;
+  const bc = document.body.classList;
+  let vis = curEl.classList.contains("show") && bc.contains("curlive") && (bc.contains("game") || bc.contains("edit")) && !bc.contains("looking");
+  if (vis && bc.contains("edit")) { const se = document.getElementById("sced"); if (document.querySelector("dialog[open]") || (se && se.classList.contains("on"))) vis = false; }
+  if (vis !== ncV) { ncV = vis; try { RCBridge.cursorShow(vis); } catch (_) {} }
+  if (curState !== ncS) { ncS = curState; try { RCBridge.cursorSet(curState); } catch (_) {} }
+}
+if (NCUR) document.body.classList.add("ncur");
+function placeView(){ const k = VW + "x" + VH + "|" + VX + "," + VY; if (k === pvK) return; pvK = k; c.style.right = "auto"; c.style.bottom = "auto"; c.style.left = VX + "px"; c.style.top = VY + "px"; c.style.width = VW + "px"; c.style.height = VH + "px"; hudEl.style.left = VX + "px"; hudEl.style.top = VY + "px"; hudEl.style.width = VW + "px"; hudEl.style.height = VH + "px"; }
+function placeCursor(){ if (curEl.dataset.s !== curState) curEl.dataset.s = curState; syncNCur(); const hs = CURSORS[curState].hot, tf = `translate(${curX - hs[0]}px,${curY - hs[1]}px)`; if (tf !== curTf) { curTf = tf; curEl.style.transform = tf; } }
 const CUR_SCALE = 1 / 8;   // Bibata cursor SVGs are drawn on a 256x256 grid; shown at 32px
 // Cursor set: Bibata (Modern Classic) by ful1e5, GPL-3.0 - https://github.com/ful1e5/Bibata_Cursor
 // arrow = left_ptr, pointing hand = hand2, open hand = hand1, fist = grabbing. hot = hotspot in 256-grid units.
@@ -1179,15 +1195,15 @@ curEl.innerHTML = Object.keys(CURSORS).map(cursorSvg).join("");   // build the f
 // O mode: the billboards, proximity prompt and mouse cursor are painted INTO the picture, so they get the same low-res JPG treatment
 
 addEventListener("pointermove", e => {
-  if (e.pointerType !== "mouse") { curEl.classList.remove("show"); return; }
-  curX = e.clientX; curY = e.clientY; curEl.classList.add("show"); document.body.classList.add("curlive"); { const h = CURSORS[curState]; if (h) curEl.style.transform = `translate(${curX - h.hot[0]}px,${curY - h.hot[1]}px)`; }
+  if (e.pointerType !== "mouse") { curEl.classList.remove("show"); syncNCur(); return; }
+  curX = e.clientX; curY = e.clientY; curEl.classList.add("show"); document.body.classList.add("curlive"); { const h = CURSORS[curState]; if (h) curEl.style.transform = `translate(${curX - h.hot[0]}px,${curY - h.hot[1]}px)`; } syncNCur();
 }, true);
 if ("onpointerrawupdate" in window) addEventListener("pointerrawupdate", e => {   // un-batched mouse position: the cursor follows the real mouse sooner than pointermove (which waits for the frame)
   if (e.pointerType !== "mouse") return;
   const h = CURSORS[curState]; if (!h || !curEl.classList.contains("show")) return;
   curX = e.clientX; curY = e.clientY; curEl.style.transform = `translate3d(${curX - h.hot[0]}px,${curY - h.hot[1]}px,0)`;
 }, true);
-document.documentElement.addEventListener("mouseleave", () => curEl.classList.remove("show"));
+document.documentElement.addEventListener("mouseleave", () => { curEl.classList.remove("show"); syncNCur(); });
 document.addEventListener("pointerlockchange", () => { if (!document.pointerLockElement && rmbLook) stopLook(); });   // lock lost (Esc, alt-tab): never stay stuck
 let VW = innerWidth, VH = innerHeight, VX = 0, VY = 0;
 // render resolution: the 3D canvas now uses the device pixel ratio (max 2x) instead of CSS pixels.
@@ -1443,7 +1459,7 @@ let dbgEl = null, dbgT = 0, dbgF = 0;
 if (/[?&]debug/.test(location.search)) { dbgEl = document.createElement("div"); dbgEl.style.cssText = "position:fixed;left:6px;top:6px;z-index:99;background:rgba(0,0,0,.7);color:#0f0;font:11px monospace;padding:4px 6px;pointer-events:none;white-space:pre"; document.body.appendChild(dbgEl); }
 // ======================= MAP EDITOR (Studio-style) =======================
 const $ = id => document.getElementById(id);
-const gz = $("gz"), g2 = gz.getContext("2d");
+const gz = $("gz"), g2 = gz.getContext("2d", { desynchronized: true });   // desynchronized: drawn straight to the screen, no wait for the compositor (less lag behind the 3D view)
 let blocks = [], sel = -1, stud = 1, rotStep = 5, tool = "move", lastCol = "#4a90d9", lastSurf = "smooth";
 let curPlace = null, menuOpen = true;
 const okB = b => b && Array.isArray(b.pos) && Array.isArray(b.size) && b.pos.length === 3 && b.size.length === 3;
@@ -1480,7 +1496,7 @@ const uid = () => "f" + Math.random().toString(36).slice(2, 8);
 function spawnAt(){ try { const ps = blocks.filter(b => b.special === "spawn" && inWorld(b) && !b.spawnOff), p = ps[Math.floor(Math.random() * ps.length)]; if (p) return [p.pos[0], p.pos[1] + p.size[1] / 2 + 5, p.pos[2]]; } catch (_) {} return [0, 6, 0]; }
 let svT = 0;
 const flushSave = () => { if (svT) { clearTimeout(svT); svT = 0; savePlace(); } };
-const saveB = () => { try { updMass(); } catch (_) {} try { applyFX(); } catch (_) {} try { renderGui(); } catch (_) {} clearTimeout(svT); svT = setTimeout(() => { svT = 0; savePlace(); }, 400); };
+const saveB = () => { sceneVer++; try { updMass(); } catch (_) {} try { applyFX(); } catch (_) {} try { renderGui(); } catch (_) {} clearTimeout(svT); svT = setTimeout(() => { svT = 0; savePlace(); }, 400); };
 addEventListener("pagehide", flushSave); document.addEventListener("visibilitychange", () => { if (document.hidden) flushSave(); });
 // ---- GUI: ScreenGui / Frame / TextLabel / TextButton, drawn as a page overlay (position + size are % of the parent) ----
 const GUIN = { screen: "ScreenGui", frame: "Frame", label: "TextLabel", button: "TextButton", imagelabel: "ImageLabel", imagebutton: "ImageButton", video: "VideoFrame", surface: "SurfaceGui", billboard: "BillboardGui" };
@@ -2437,7 +2453,7 @@ function packModel(name, groups){
     const s0 = idx.length;
     for (let i = 0; i < g.P.length / 3; i++) {
       const px = Math.round(((g.P[i*3] - cen[0]) / ext[0] + 0.5) * 65535), py = Math.round(((g.P[i*3+1] - cen[1]) / ext[1] + 0.5) * 65535), pz = Math.round(((g.P[i*3+2] - cen[2]) / ext[2] + 0.5) * 65535);
-      let nx = g.N[i*3] / ext[0], ny = g.N[i*3+1] / ext[1], nz = g.N[i*3+2] / ext[2]; const nl = Math.hypot(nx, ny, nz) || 1; nx = q(nx / nl, 127); ny = q(ny / nl, 127); nz = q(nz / nl, 127);
+      let nx = g.N[i*3] * ext[0], ny = g.N[i*3+1] * ext[1], nz = g.N[i*3+2] * ext[2]; const nl = Math.hypot(nx, ny, nz) || 1; nx = q(nx / nl, 127); ny = q(ny / nl, 127); nz = q(nz / nl, 127);   // unit-box normal = n * extent (the shader divides by the part size again)
       const u = Math.max(-32767, Math.min(32767, Math.round(g.T[i*2] * 1024))), v = Math.max(-32767, Math.min(32767, Math.round(g.T[i*2+1] * 1024)));
       const vcv = g.VC && g.VC[(i / 3) | 0] ? g.VC[(i / 3) | 0][i % 3] : null, cr = vcv ? Math.round(vcv[0] * 255) : 255, cg = vcv ? Math.round(vcv[1] * 255) : 255, cb = vcv ? Math.round(vcv[2] * 255) : 255; if (vcv) hasC = true;
       const key = px + "," + py + "," + pz + "," + nx + "," + ny + "," + nz + "," + u + "," + v + "," + cr + "," + cg + "," + cb; let id = map.get(key);
@@ -2694,12 +2710,14 @@ function outline(b, col){
   for (const [i, j] of [[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]]) { const s = segS(cn[i], cn[j]); if (s) { g2.moveTo(s[0][0], s[0][1]); g2.lineTo(s[1][0], s[1][1]); } }
   g2.stroke();
 }
-const ghC = $("gh"), gh = ghC.getContext("2d");
+const ghC = $("gh"), gh = ghC.getContext("2d", { desynchronized: true });
+let hlSg = "", hlSkip = 0;
 let hlHad = false;
 function drawHighlights(vp, eye){
   const list = []; for (const h of blocks) { if (h.kind !== "highlight" || h.enabled === false || !h.par || !inWorld(h)) continue; const t = byId(h.par); if (t) list.push([h, t]); }
   if (!list.length && !hlHad) return; hlHad = list.length > 0;
-  const dpr = Math.min(devicePixelRatio || 1, 2), w = Math.round(VW * dpr), hh = Math.round(VH * dpr);
+  if (list.length && !playing) { const sg = vp.join(",") + "|" + sceneVer; if (sg === hlSg && eds.size === 0 && ++hlSkip < 30) return; hlSg = sg; hlSkip = 0; }   // same view, same scene: the picture on the canvas is still right
+  const dpr = OVD, w = Math.round(VW * dpr), hh = Math.round(VH * dpr);
   if (ghC.width !== w || ghC.height !== hh) { ghC.width = w; ghC.height = hh; }
   gh.setTransform(dpr, 0, 0, dpr, 0, 0); gh.clearRect(0, 0, VW, VH); if (!list.length) return;
   const P = p => { const m = vp; return [m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12], m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13], m[3]*p[0]+m[7]*p[1]+m[11]*p[2]+m[15]]; };
@@ -2730,7 +2748,7 @@ function drawOverlay(){
   const need = msel.size > 0 || !!blocks[sel];
   if (!need && !ovHad) return;   // nothing selected and nothing drawn last frame: don't touch the full-screen overlay canvas
   ovHad = need;
-  const dpr = Math.min(devicePixelRatio || 1, 2), w = Math.round(VW * dpr), h = Math.round(VH * dpr);
+  const dpr = OVD, w = Math.round(VW * dpr), h = Math.round(VH * dpr);
   if (gz.width !== w || gz.height !== h) { gz.width = w; gz.height = h; }
   g2.setTransform(dpr, 0, 0, dpr, 0, 0); g2.clearRect(0, 0, VW, VH);
   for (const si of msel) { const o = blocks[si]; if (o && si !== sel && !NOGEO(o)) outline(o, "#7fcfff"); }
@@ -3110,7 +3128,7 @@ if (window.ResizeObserver) new ResizeObserver(() => layoutBottom()).observe($("t
 function updMass(){ const m = $("mass"); if (sel >= 0 && blocks[sel] && !(blocks[sel].mass > 0) && document.activeElement !== m) m.value = fmt(volOf(blocks[sel]) * 0.7); }
 const FACES = [["sRight", 0], ["sTop", 1], ["sFront", 2], ["sLeft", 3], ["sBot", 4], ["sBack", 5]];
 const surfArr = b => Array.isArray(b.surface) ? b.surface.slice() : Array(6).fill(b.surface || "smooth");
-function fill(live){ fill0(live); try { syncPrompt(); } catch (_) {} try { const ph = document.querySelector("#explorer .ph"); if (ph) ph.textContent = msel.size > 1 ? "Explorer \u00b7 " + msel.size + " selected" : "Explorer"; } catch (_) {} }
+function fill(live){ sceneVer++; fill0(live); try { syncPrompt(); } catch (_) {} try { const ph = document.querySelector("#explorer .ph"); if (ph) ph.textContent = msel.size > 1 ? "Explorer \u00b7 " + msel.size + " selected" : "Explorer"; } catch (_) {} }
 function syncPrompt(){
   const b = cur1(); if (!b || b.kind !== "prompt") return; const ed = id => document.activeElement === $(id);
   if (!ed("ppAct")) $("ppAct").value = b.ppAct || ""; if (!ed("ppObj")) $("ppObj").value = b.ppObj || "";
@@ -3295,6 +3313,7 @@ function applyLighting(){
 Object.assign(NR, (() => {
   const B = window.RCBridge, can = !!(NATIVE && B && B.rStart), NAMES = ["block", "ball", "cylinder", "cone", "pyramid", "wedge", "cornerwedge", "frustum"];
   const PS = 33;   // floats per part: mesh, model(16), colour(3), alpha, glow, 6 face surfaces, then the Decal/Texture: image id (-1 none), mode (1 decal, 2 tiled), face, tile, alpha
+  let bVer = -1, bBlocks = null, bLen = -1, bSkip = 0;   // edit mode: the part list is only rebuilt when something changed (or every 20 frames as a safety net)
   let sent = false, sig = 0, fxSig = "", buf = new Float32Array(PS * 512), lights = new Float32Array(56);
   let pBuf = new Float32Array(PS * 512), pLights = new Float32Array(56), pN = -1, pNL = -1;   // what the native renderer already has, to send only the difference
   const toB64 = f => { const u = new Uint8Array(f.buffer, f.byteOffset, f.byteLength); let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -3426,6 +3445,8 @@ Object.assign(NR, (() => {
       cn = 0; camRan = true;
       if (!sent) sendMeshes(); sendTextures();
       if (!faceSent && faceB64) { faceSent = true; try { B.rFace(faceB64); } catch (_) { faceSent = false; } }
+      if (!playing && sceneVer === bVer && blocks === bBlocks && blocks.length === bLen && eds.size === 0 && pN >= 0 && ++bSkip < 20) { B.rFrame(frameData(vp, eye).join(",")); return; }
+      bSkip = 0; bVer = sceneVer; bBlocks = blocks; bLen = blocks.length;
       const r = build(eye);
       if (r.h !== sig) { sig = r.h;
         // while dragging only a few parts change: send just those (no base64 of the whole map every frame, so the picture keeps up with the outline)
@@ -4216,7 +4237,7 @@ function editFrame(now, dt){
   flushDrag();
   FOV = Math.max(20, Math.min(120, CAMS.fov)) * Math.PI / 180;   // (play may have used a Camera object's own field of view)
   curState = curHover && curHover.closest && curHover.closest("button,select,.row,.mi,.rs,.dd") ? "point" : "arrow";
-  curEl.dataset.s = curState; { const hs = CURSORS[curState].hot; curEl.style.transform = `translate(${curX - hs[0]}px,${curY - hs[1]}px)`; }
+  placeCursor();
   const kv = kbVec(), jx = joyId !== null ? joy.x : kv[0], jy = joyId !== null ? joy.y : kv[1];
   const sp = (edKeys.has("ShiftLeft") || edKeys.has("ShiftRight")) ? 60 : 20, f0 = fwdV(), r0 = [Math.cos(camYaw), 0, Math.sin(camYaw)];
   const ud = ((edKeys.has("KeyE") || flyUp) ? 1 : 0) - ((edKeys.has("KeyQ") || flyDn) ? 1 : 0);
@@ -4224,7 +4245,7 @@ function editFrame(now, dt){
   if (!isFinite(fc.x + fc.y + fc.z)) { fc.x = 0; fc.y = 14; fc.z = 26; }
   const eye = [fc.x, fc.y, fc.z], tgt = [eye[0]+f0[0], eye[1]+f0[1], eye[2]+f0[2]];
   VW = innerWidth; VH = innerHeight; VX = VY = 0;
-  c.style.right = "auto"; c.style.bottom = "auto"; c.style.left = "0px"; c.style.top = "0px"; c.style.width = VW + "px"; c.style.height = VH + "px";
+  placeView();
   { const ec = edCam, moved = Math.abs(eye[0]-ec[0]) + Math.abs(eye[1]-ec[1]) + Math.abs(eye[2]-ec[2]) + Math.abs(tgt[0]-ec[3]) + Math.abs(tgt[1]-ec[4]) + Math.abs(tgt[2]-ec[5]) > 1e-4;
     edCam = [eye[0], eye[1], eye[2], tgt[0], tgt[1], tgt[2]];
     if (moved || eds.size > 0) edMoveT = now;
@@ -4498,14 +4519,12 @@ addEventListener("keydown", e => {
 });
 function frame(now){ drainMouse(); scaleTick(now); if (RES_LOCK && playing) RES = resFor(true);
   try { resAdapt(now); frame0(now); if (NR.on && NR.end) NR.end(); } finally { idMap = null; }
-  if (fpsOn) { if (!fpsT) fpsT = now; fpsN++; if (now - fpsT >= 500) { const ms = (now - fpsT) / fpsN; $("fpsb").textContent = Math.round(1000 / ms) + " FPS  \u00b7  " + ms.toFixed(1) + " ms"; fpsN = 0; fpsT = now; } } }
+  if (fpsOn) { if (!fpsT) fpsT = now; fpsN++; if (now - fpsT >= 500) { const ms = (now - fpsT) / fpsN; $("fpsb").textContent = Math.round(1000 / ms) + " FPS  \u00b7  " + ms.toFixed(1) + " ms" + (NATIVE && NATIVE.hz ? "  \u00b7  screen " + Math.round(NATIVE.hz) + " Hz" : ""); fpsN = 0; fpsT = now; } } }
 function frame0(now){
   const dt = Math.min((now - last)/1000, 0.05); last = now; if (!playing && (scIsOpen || menuOpen)) { requestAnimationFrame(frame); return; } if (LS.cycle > 0) cycleStep(dt); if (!playing) { editFrame(now, dt); requestAnimationFrame(frame); return; }
   if (dbgEl) { dbgF++; if (now - dbgT > 500) { dbgEl.textContent = "fps " + Math.round(dbgF * 1000 / (now - dbgT)) + "\n" + Cam.dbg() + "\ngoal " + camGoal.toFixed(1) + " dist " + camDist.toFixed(1) + "\nvp " + innerWidth + "x" + innerHeight + " dpr " + devicePixelRatio; dbgT = now; dbgF = 0; } }
   curState = "arrow"; stepPeers(dt);
-  curEl.dataset.s = curState;
-  const hs = CURSORS[curState].hot;
-  curEl.style.transform = `translate(${curX - hs[0]}px,${curY - hs[1]}px)`;
+  placeCursor();
 
   try { scriptFrame(dt); } catch (e) { rcOut("script error: " + (e && e.message || e), true); }
   // input -> desired velocity (camera relative)
@@ -4521,7 +4540,9 @@ function frame0(now){
   grounded = state === "stand" ? checkGround() : false;
 
   // physics
-  const steps = Math.max(1, Math.round(dt * 60)), hStep = dt / steps;
+  // physics never takes a step longer than 1/120 s, whatever the FPS: a slow frame is cut into more small steps (max 6 = the 0.05 s frame cap),
+  // so a 1-5 FPS phone gets the same jump height and floor contact as a 120 FPS one (it just plays in slow motion instead of jumping high / sinking into the floor)
+  const steps = Math.max(1, Math.ceil(dt * 120 - 1e-6)), hStep = dt / steps;
   world.timestep = hStep;
   let minVy = 0;
   for (let s = 0; s < steps; s++) {
@@ -4618,8 +4639,7 @@ function frame0(now){
 
   // ----- the scene (the native renderer draws it; this only works out the camera and hands over the data) -----
   VW = innerWidth; VH = innerHeight; VX = VY = 0;
-  c.style.right = "auto"; c.style.bottom = "auto"; c.style.left = VX + "px"; c.style.top = VY + "px"; c.style.width = VW + "px"; c.style.height = VH + "px";
-  hudEl.style.left = VX + "px"; hudEl.style.top = VY + "px"; hudEl.style.width = VW + "px"; hudEl.style.height = VH + "px";
+  placeView();
   const rw = Math.round(VW * RES), rh = Math.round(VH * RES);
   if (c.width !== rw || c.height !== rh) { c.width = rw; c.height = rh; }
 
